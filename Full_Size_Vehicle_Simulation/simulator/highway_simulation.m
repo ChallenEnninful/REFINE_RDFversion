@@ -28,9 +28,10 @@ num_moving_cars = 15;
 num_static_cars = 3;
 num_total_cars = num_ego_vehicles + num_moving_cars + num_static_cars;
 hlp_lookahead = 90;
+lane_changeFRS_log = {};
 
 
-for j = 1:1000 
+for j = 1:1 
     % RESET simulation environment
     World = dynamic_car_world( 'bounds', bounds, ...
         'buffer', world_buffer, 'goal', [1010;3.7], ...
@@ -43,8 +44,9 @@ for j = 1:1000
     Agent.integrator_type= 'ode45';
     HLP = simple_highway_HLP; % high-level planner
     HLP.lookahead = hlp_lookahead; 
-    AgentHelper = highwayAgentHelper(Agent,frs,HLP,'t_plan',t_plan,'t_move',t_move,'t_failsafe_move',t_failsafe_move,...
+    AgentHelper = highwayAgentHelper_timed(Agent,frs,HLP,'t_plan',t_plan,'t_move',t_move,'t_failsafe_move',t_failsafe_move,...
         'verbose',verbose_level); % takes care of online planning
+    AgentHelper.FRS_u0_p_maps = load("u0_p_maps.mat");
     Simulator = rlsimulator(AgentHelper,World,'plot_sim_flag',plot_sim_flag,'plot_AH_flag',plot_AH_flag,'save_result',save_result);
 
     AgentHelper.S = Simulator;
@@ -56,10 +58,35 @@ for j = 1:1000
     IsDone4 = 0;
     Simulator.epscur = j;
     Simulator.reset();
+    jk=1;
     for i = 1:4000
-        i
+        
         AgentHelper.planned_path = [linspace(0,1000);repmat([0;0],1,100)];
         [~,~,IsDone,LoggedSignal]=Simulator.step([rand*2-1;rand*2-1]);
+%         if jk>1
+%             timediff = AgentHelper.A.time(end) - lane_changeFRS_log{jk-1}.global_time;
+%         end
+% 
+%         if i>1 && timediff >6 && strcmp(AgentHelper.SDF_trial_FRSdata.man_type ,'lan')
+%             lane_changeFRS_log{jk} = AgentHelper.SDF_trial_FRSdata;
+%             jk=jk+1;
+%         elseif jk==1
+%             lane_changeFRS_log{jk} = AgentHelper.SDF_trial_FRSdata;
+%             jk=jk+1;
+%         elseif i>1 && ~strcmp(AgentHelper.SDF_trial_FRSdata.man_type ,'lan')
+%             lane_changeFRS_log{jk} = AgentHelper.SDF_trial_FRSdata;
+%             jk=jk+1;
+%         end
+            
+
+
+%         lane_changeFRS_log{i} = AgentHelper.SDF_trial_FRSdata;  
+%         if i == 1 && noskip
+%             lane_changeFRS_log{j} = AgentHelper.SDF_trial_FRSdata;
+%         end
+
+        
+
         if IsDone == 1 || IsDone == 3 || IsDone == 4 || IsDone == 5
             %crash
             %      crash with safety layer on

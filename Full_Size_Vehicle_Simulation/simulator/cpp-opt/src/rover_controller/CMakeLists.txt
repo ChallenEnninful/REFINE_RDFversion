@@ -65,6 +65,7 @@ file(GLOB_RECURSE SRC_FILES_NO_EXEC "src/*.cc")
 #message("CMAKE SOURCE DIR ${CMAKE_SOURCE_DIR}")
 #message("CMAKE_CURRENT_LIST_DIR: ${CMAKE_CURRENT_LIST_DIR}")
 list(REMOVE_ITEM SRC_FILES_NO_EXEC "${CMAKE_CURRENT_LIST_DIR}/src/test_mex_comp.cc")
+list(REMOVE_ITEM SRC_FILES_NO_EXEC "${CMAKE_CURRENT_LIST_DIR}/src/RDF_mex_cons_test.cc")
 #message("SRC_FILES_NO_EXEC: ${SRC_FILES_NO_EXEC}")
 
 set(CUSTOM_COMPILE_FLAGS " ")
@@ -88,3 +89,4 @@ function(add_rover_executable EXEC_TARGET_NAME EXEC_FNAME IS_MEX)
 endfunction()
 
 add_rover_executable(TEST_MEX src/test_mex_comp.cc TRUE)
+add_rover_executable(RDF_MEX src/RDF_mex_cons_test.cc TRUE)

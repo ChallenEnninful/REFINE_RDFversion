@@ -67,6 +67,9 @@ ENV MW_DDUX_FORCE_ENABLE=true MW_CONTEXT_TAGS=MATLAB:DOCKERFILE:V1
 #ENTRYPOINT ["matlab"]
 #CMD [""]
 
+#ADDED by Challen
+RUN apt-get update
+
 # Fix matlab warning
 RUN apt-get install -yq libcanberra-gtk-module libcanberra-gtk3-module
 

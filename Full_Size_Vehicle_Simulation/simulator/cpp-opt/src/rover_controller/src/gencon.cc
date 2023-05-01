@@ -259,6 +259,7 @@ Constraints GenerateConstraints(const Vehrs& vehrs, const ObsInfo& obs_info) {
     const double slc_x = vehrs.slc_x_.at(zono_idx);
     const double slc_y = vehrs.slc_y_.at(zono_idx);
 
+    // std::cout << "__GENCON_NUM_OBS_: " << num_obs << std::endl;
     for (IndexT obs_idx = 0; obs_idx < num_obs; ++obs_idx) {
       const IndexT curr_row_out_start =
           (cum_size_arr[zono_idx] * num_obs) + (curr_n * obs_idx);

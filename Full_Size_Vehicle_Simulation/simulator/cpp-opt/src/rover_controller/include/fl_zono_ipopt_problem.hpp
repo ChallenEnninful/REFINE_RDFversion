@@ -207,6 +207,17 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
   /// \return true iff successful
   bool eval_g(Index n, const Number* x, bool new_x, Index m,
               Number* g) override;
+  // std::vector<double> out_cons; out_cons.resize(m); eval_g(n, x, new_x, m, out_cons.data())
+
+  /// Computes the constraint values and returns the evaluation time
+  /// \param n the dimensionality of the decision variable, \p x
+  /// \param x the decision variable
+  /// \param new_x false if any eval_* was called with the same value in \p x
+  /// \param m the number of constraints
+  /// \param g out param to store the constraint values
+  /// \return true iff successful
+  double eval_g_timed(Index n, const Number* x, bool new_x, Index m,
+              Number* g);  
 
   /// Evaluates the jacobian of the gradient, and sets the structure (location
   /// of nonzero entries) if it is the first evaluation
@@ -227,6 +238,26 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
   /// \return true iff successful
   bool eval_jac_g(Index n, const Number* x, bool new_x, Index m, Index nele_jac,
                   Index* iRow, Index* jCol, Number* values) override;
+
+  /// Evaluates the jacobian of the gradient, and sets the structure (location
+  /// of nonzero entries) if it is the first evaluation
+  /// \param n the dimensionality of the decision variable, \p x
+  /// \param x the decision variable
+  /// \param new_x false if any eval_* was called with the same value in \p x
+  /// \param m the number of constraints
+  /// \param nele_jac the number of nonzero elements in the Jacobian
+  /// \param iRow out param. First call: array of length \p nele_jac to store
+  /// the row indices of entries in the Jacobian of the constraints.
+  /// Later calls: NULL
+  /// \param jCol out param. First call: array of length \p nele_jac to store
+  /// the column indices of entries in the Jacobian of the constraints.
+  /// Later calls: NULL
+  /// \param values out param. First call: NULL. Later calls: array of length
+  /// \p nele_jac to store the values of the entries in the Jacobian of the
+  /// constraints
+  /// \return true iff successful
+  double eval_jac_g_timed(Index n, const Number* x, bool new_x, Index m, Index nele_jac,
+                  Index* iRow, Index* jCol, Number* values);
 
   /// First call: returns the structure of the hessian of the lagrangian.
   /// Secondary calls: evaluates the hessian of the lagrangian.

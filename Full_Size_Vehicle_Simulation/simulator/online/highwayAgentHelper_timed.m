@@ -1,4 +1,4 @@
-classdef highwayAgentHelper < agentHelper
+classdef highwayAgentHelper_timed < agentHelper
     %% properties
     properties
         HLP;
@@ -34,10 +34,16 @@ classdef highwayAgentHelper < agentHelper
         %Challen added for Jon
         SDF_trial_FRSdata = struct;
 
+        FRS_plot_struct = struct;
+        FRS_u0_p_maps = struct;
+        FRS_spd = struct;
+        FRS_dir = struct;
+        FRS_lan = struct;
+
     end
     %% methods
     methods
-        function AH = highwayAgentHelper(A,FRS_obj,HLP,varargin)
+        function AH = highwayAgentHelper_timed(A,FRS_obj,HLP,varargin)
             AH@agentHelper(A,FRS_obj,varargin{:});
             AH.HLP = HLP;
             info_file_dir = load('dir_change_Ay_info.mat');
@@ -78,9 +84,9 @@ classdef highwayAgentHelper < agentHelper
                 %loop over FRS's to output the corresponding obstacle
                 %generators in local frame
 
-                obs_zono = zeros(length(dyn_obs_local),4,2);
-                obs_zono_mirr = zeros(length(dyn_obs_local),4,2);
-                v = 25; %max obstacle velocity  
+            obs_zono = zeros(length(dyn_obs_local),4,2);
+            obs_zono_mirr = zeros(length(dyn_obs_local),4,2);
+            v = 25; %max obstacle velocity  
 
 
                 for jj = 1:length(dyn_obs_local)
@@ -119,6 +125,106 @@ classdef highwayAgentHelper < agentHelper
                     obs_zono_mirr(jj,:,:) = obs_zono_mirr_jj;
                     
                 end
+
+               %% ######################## Timing of constraints and gradients evaluation
+
+                u0_FRS_ranges = AH.FRS_u0_p_maps.u0map;
+                urange_diff = abs(u0_FRS_ranges - agent_state(4));
+    %             [~,idxu0_minpot] = min(urange_diff);
+                [~,idxmin]  = min(sum(urange_diff,2));
+                idxu0 = min(idxmin);
+    
+    %             idxu0_z = [];
+    %             for kk = 1:length(u0_FRS_ranges)
+    %                 if agent_state(4) >= u0_FRS_ranges(kk,1) && agent_state(4) <= u0_FRS_ranges(kk,2)
+    %                     idxu0_z = [idxu0_z,kk];
+    %                 end
+    %             end
+    %             idxu0 = min(idxu0_minpot);
+    
+    
+                spd_FRS_ranges = AH.FRS_u0_p_maps.pmap(idxu0).spd;
+                lan_FRS_ranges = AH.FRS_u0_p_maps.pmap(idxu0).lan;
+                dir_FRS_ranges = AH.FRS_u0_p_maps.pmap(idxu0).dir;
+    
+                min_spd_au = 0; %min speed that the vehicle can change speed to in each maneuver
+                max_spd_au = agent_state_mex(4) + 4; %max speed that the vehicle can speed up to in each maneuver
+                bin_indices_i = [];
+                bin_indices_j = [];
+                FRS_types = [];
+                obstacles_are_mirrored = [];
+                way_point = [];
+                spd_FRS_range_feas = [];
+    
+                for ii = 1:3
+                    if ii ==1
+    
+                        for i = 1:length(spd_FRS_ranges)
+                            if spd_FRS_ranges(i,1) >= min_spd_au && spd_FRS_ranges(i,2) <= max_spd_au
+                                bin_indices_i = [bin_indices_i,idxu0-1];
+                                bin_indices_j = [bin_indices_j,i-1];
+                                FRS_types = [FRS_types,ii-1];
+                                obstacles_are_mirrored = [obstacles_are_mirrored,0];
+                                spd_FRS_range_feas = [spd_FRS_range_feas; spd_FRS_ranges(i,:)];
+                            
+                            end
+    
+                        end
+    
+                    elseif ii == 2
+    
+                        %Don't look at direction changes if they are outside the linear regime (<= 7.0m/s)
+                        if u0_FRS_ranges(idxu0,1) > 7 
+                            for i = 1:length(dir_FRS_ranges)
+                                %add double the number of indices to account
+                                %for mirrored FRSes
+                                bin_indices_i = [bin_indices_i,idxu0-1,idxu0-1];
+                                bin_indices_j = [bin_indices_j,i-1,i-1];
+                                FRS_types = [FRS_types,ii-1,ii-1];
+                                obstacles_are_mirrored = [obstacles_are_mirrored,0,1]; 
+                                
+                            end
+    
+                        end
+                     
+                    elseif ii == 3
+    
+                        %Don't look at lane changes if they are outside the linear regime (<= 7.0m/s)
+                        if u0_FRS_ranges(idxu0,1) > 7 
+                            for i = 1:length(lan_FRS_ranges)
+                                %add double the number of indices to account
+                                %for mirrored FRSes
+                                bin_indices_i = [bin_indices_i,idxu0-1,idxu0-1];
+                                bin_indices_j = [bin_indices_j,i-1,i-1];
+                                FRS_types = [FRS_types,ii-1,ii-1];
+                                obstacles_are_mirrored = [obstacles_are_mirrored,0,1]; 
+                                
+                            end
+    
+                        end
+                    end
+    
+                end
+    
+    
+                %% Call New function to run constraint evaluation time test
+                %comment out during normal operation
+
+                num_k = 10; %number of k values you want to evaluate
+                tic
+                times = time_cons_eval(AH,agent_state_mex, x_des_mex, dyn_obs_mex,...
+                        spd_FRS_ranges,lan_FRS_ranges,dir_FRS_ranges,...
+                        FRS_types,bin_indices_j,obstacles_are_mirrored,num_k);
+
+                toc
+
+
+
+
+
+
+
+
 %% ###########Continue optimization
             %continue with original code and run C++ optimization
             tic

@@ -3,11 +3,22 @@
 #include <cassert>  // for assert
 #include <cstddef>  // for NULL
 #include <ostream>  // for operator<<, basic_ostream<>::__ostream_type
-
+#include <chrono>
 #include "ros/console.h"
 
 namespace roahm {
+namespace {
+  template <typename T, typename S>
+  double GetDeltaS(const T& t1, const S& t0) {
+  return static_cast<double>(
+             std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0)
+                 .count()) /
+         1.0e9;
+}
 
+inline auto Tick() { return std::chrono::high_resolution_clock::now(); }
+
+}
 namespace fl_zono_ipopt_problem {
 CostFcnInfo::CostAndDerivs FlZonoIpoptProblem::ComputeCostAndDerivs(
     const double k, bool eval_opt) {
@@ -91,16 +102,21 @@ bool FlZonoIpoptProblem::eval_f(Index n, const Number* x, bool new_x,
 bool FlZonoIpoptProblem::eval_grad_f(Index n, const Number* x, bool new_x,
                                      Number* grad_f) {
   // Already computed with the cost to ComputeCosts in eval_f
+  // const auto C_t1 = Tick();
   if (cost_used_k_ != x[0]) {  // JL: add safeguard
     ComputeCostAndDerivs(x[0]);
   }
   grad_f[0] = jac_k_;
-
+  // const auto C_t2 = Tick();
+  // std::cout << "Gradient Evaluation Time:" << GetDeltaS(C_t2, C_t1) << std::endl;
   return true;
 }
 
 double FlZonoIpoptProblem::ComputeConstraint(const Number* x, Index m,
                                              Number* g) {
+  //Challen ADDED
+  const auto C_t3 = Tick();
+  
   const Number k_curr = x[0];
   constr_used_k_ = k_curr;
   const auto* const a_ptr = a_mat_.get();
@@ -128,12 +144,22 @@ double FlZonoIpoptProblem::ComputeConstraint(const Number* x, Index m,
     g[zono_idx] = min_val;
     min_indices_.at(zono_idx) = min_idx;
   }
-  return max_of_all_constraints;
+  const auto C_t4 = Tick();
+  // std::cout << "IPOPT Current k:" << k_curr << std::endl;
+  // std::cout << "IPOPT Constraint Evaluation Time:" << GetDeltaS(C_t4, C_t3) << std::endl;
+    return max_of_all_constraints;
 }
 
 bool FlZonoIpoptProblem::eval_g(Index n, const Number* x, bool new_x, Index m,
                                 Number* g) {
   double max_of_all_constraints = ComputeConstraint(x, m, g);
+
+  // std::cout << "CONSTRAINT EVAL" << std::endl;
+  // std::cout << "n:" << n << std::endl;
+  // std::cout << "x:" << x << std::endl;
+  // std::cout << "new_x:" << new_x << std::endl;
+  // std::cout << "m:" << m << std::endl;
+  // std::cout << "g:" << g << std::endl;
 
   // Keep track of the lowest cost parameter that has been feasible
   if (max_of_all_constraints <= 0.0) {
@@ -155,9 +181,47 @@ bool FlZonoIpoptProblem::eval_g(Index n, const Number* x, bool new_x, Index m,
   return true;
 }
 
+double FlZonoIpoptProblem::eval_g_timed(Index n, const Number* x, bool new_x, Index m,
+                                Number* g) {
+  const auto C_t10 = Tick(); 
+  double max_of_all_constraints = ComputeConstraint(x, m, g);
+
+  // Keep track of the lowest cost parameter that has been feasible
+  if (max_of_all_constraints <= 0.0) {
+    const auto curr_cost = ComputeCostAndDerivs(x[0]).cost_k_;
+    if ((not feasible_found_) or (curr_cost < prev_min_cost_)) {
+      // If we haven't previously found a feasible solution, or this is the
+      // lowest cost feasible solution, store it.
+      prev_min_cost_ = curr_cost;
+      prev_min_k_ = x[0];
+			if (std::abs(prev_min_k_) < 5.0) {
+				std::cout << "[DBG] [LAN/DIR] Feasible Cost: " << curr_cost << " [K: " << prev_min_k_ << "]" << std::endl;
+			}
+    }
+    feasible_found_ = true;
+  } else {
+		std::cout << "[DBG] No feasible solution at " << x[0] << std::endl;
+	}
+
+  const auto C_t11 = Tick();
+  const auto eval_time = GetDeltaS(C_t11, C_t10);
+  return eval_time;
+}
+
 bool FlZonoIpoptProblem::eval_jac_g(Index n, const Number* x, bool new_x,
                                     Index m, Index nele_jac, Index* iRow,
                                     Index* jCol, Number* values) {
+                                      
+  // std::cout << "CONS JAC EVAL" << std::endl;
+  // std::cout << "n:" << n << std::endl;
+  // std::cout << "x:" << x << std::endl;
+  // std::cout << "new_x:" << new_x << std::endl;
+  // std::cout << "m:" << m << std::endl;
+  // std::cout << "nele_jac:" << nele_jac << std::endl;
+  // std::cout << "iRow:" << iRow << std::endl;
+  // std::cout << "jCol:" << jCol << std::endl;
+  // std::cout << "values:" << values << std::endl;
+  const auto C_t5 = Tick(); 
   if (values == NULL) {
     // Return structure of the jacobian of the constraints
     // element at i,j: grad_{x_j} g_{i}(x)
@@ -183,8 +247,45 @@ bool FlZonoIpoptProblem::eval_jac_g(Index n, const Number* x, bool new_x,
       values[r] = -a_ptr[idx] / cost_fcn_info_.g_k_;
     }
   }
-
+  const auto C_t6 = Tick();
+  // std::cout << "IPOPT Constraint Gradient Evaluation Time:" << GetDeltaS(C_t6, C_t5) << std::endl;
   return true;
+}
+
+double FlZonoIpoptProblem::eval_jac_g_timed(Index n, const Number* x, bool new_x,
+                                    Index m, Index nele_jac, Index* iRow,
+                                    Index* jCol, Number* values) {
+  const auto C_t5 = Tick(); 
+  if (values == NULL) {
+    // Return structure of the jacobian of the constraints
+    // element at i,j: grad_{x_j} g_{i}(x)
+    for (Index r = 0; r < m; ++r) {
+      for (Index c = 0; c < n; ++c) {
+        Index idx = (r * n) + c;
+        iRow[idx] = r;
+        jCol[idx] = c;
+      }
+    }
+  } else {
+    // return the values of the jacobian of the constraints
+    // element at i,j: grad_{x_j} g_{i}(x)
+    if (constr_used_k_ != x[0])
+      ComputeConstraint(x, m,
+                        values);  // JL: add safeguard. Notices values has
+    // the same length as g, but values will be
+    // recomputed in the next for loop
+
+    auto* a_ptr = a_mat_.get();
+    for (Index r = 0; r < m; ++r) {
+      const Index idx = min_indices_.at(r);
+      values[r] = -a_ptr[idx] / cost_fcn_info_.g_k_;
+    }
+  }
+  const auto C_t6 = Tick();
+  const auto eval_time = GetDeltaS(C_t6, C_t5);
+
+  // std::cout << "IPOPT Constraint Gradient Evaluation Time:" << GetDeltaS(C_t6, C_t5) << std::endl;
+  return eval_time;
 }
 
 bool FlZonoIpoptProblem::eval_h(Index n, const Number* x, bool new_x,
