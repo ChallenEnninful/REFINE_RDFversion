@@ -31,7 +31,7 @@ hlp_lookahead = 90;
 lane_changeFRS_log = {};
 
 
-for j = 1:1 
+for j = 2:1000 
     % RESET simulation environment
     World = dynamic_car_world( 'bounds', bounds, ...
         'buffer', world_buffer, 'goal', [1010;3.7], ...
