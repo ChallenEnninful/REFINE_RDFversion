@@ -160,7 +160,8 @@ classdef highwayAgentHelper_timed < agentHelper
                     if ii ==1
     
                         for i = 1:length(spd_FRS_ranges)
-                            if spd_FRS_ranges(i,1) >= min_spd_au && spd_FRS_ranges(i,2) <= max_spd_au
+                            center_p = mean(spd_FRS_ranges(i,:));
+                            if center_p >= min_spd_au && center_p <= max_spd_au
                                 bin_indices_i = [bin_indices_i,idxu0-1];
                                 bin_indices_j = [bin_indices_j,i-1];
                                 FRS_types = [FRS_types,ii-1];
@@ -210,13 +211,13 @@ classdef highwayAgentHelper_timed < agentHelper
                 %% Call New function to run constraint evaluation time test
                 %comment out during normal operation
 
-%                 num_k = 10; %number of k values you want to evaluate
-%                 tic
-%                 times = time_cons_eval(AH,agent_state_mex, x_des_mex, dyn_obs_mex,...
-%                         spd_FRS_ranges,lan_FRS_ranges,dir_FRS_ranges,...
-%                         FRS_types,bin_indices_j,obstacles_are_mirrored,num_k);
-% 
-%                 toc
+                num_k = 10; %number of k values you want to evaluate
+                tic
+                times = time_cons_eval(AH,agent_state_mex, x_des_mex, dyn_obs_mex,...
+                        spd_FRS_ranges,lan_FRS_ranges,dir_FRS_ranges,...
+                        FRS_types,bin_indices_j,obstacles_are_mirrored,num_k);
+
+                toc
 
 
 

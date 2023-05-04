@@ -223,6 +223,9 @@ ConstTimingsRet GetConstTimings(
   std::atomic<int> successful_runs = 0;
   std::atomic<int> failure_runs = 0;
   std::atomic<int> next_idx = 0;
+  if (frses_to_search.size() != k_var.size()) {
+    throw std::runtime_error("Frses to search has size " + std::to_string(frses_to_search.size()) + " but k_var has size " + std::to_string(k_var.size()));
+  }
   const int num_search = static_cast<int>(frses_to_search.size());
   const int num_apps = 13;
 
