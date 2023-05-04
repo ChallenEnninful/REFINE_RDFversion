@@ -31,7 +31,7 @@ std::vector<FrsSelectInfo> GetParamsToSearchOver(const FrsTotal& frs,
                                                  double& state_u,
                                                  double& state_v,
                                                  double& state_r) {
-  std::cout << "===== GET PARAMS TO SEARCH =====" << std::endl;
+  // std::cout << "===== GET PARAMS TO SEARCH =====" << std::endl;
   // Set of FRSes to search
   std::vector<FrsSelectInfo> frses_to_search;  // vector of struct
 
@@ -43,16 +43,16 @@ std::vector<FrsSelectInfo> GetParamsToSearchOver(const FrsTotal& frs,
   const auto u0_idx = frs.SelectU0Idx(state_u, can_clamp_u);
 	const double min_spd_au = 0.0;
 	const double max_spd_au = state_u + 4.0;
-  std::cout << "u0_idx is: " << u0_idx << std::endl;
-  std::cout << "SEARCH AU" << std::endl;
+  // std::cout << "u0_idx is: " << u0_idx << std::endl;
+  // std::cout << "SEARCH AU" << std::endl;
   auto add_frs = [&state_v, &state_r, &frses_to_search, &min_spd_au, &max_spd_au](
                      const long first_idx,
                      const long last_idx,  // [first, last)
                      const bool is_table_populated, const FrsMega& vehrs,
                      const ManuType& manu_type, std::size_t u0_idx,
                      bool is_outer, int other_idx, bool also_mirror) -> void {
-     std::cout << "First_idx: " << first_idx << std::endl;
-     std::cout << "Last_idx: " << last_idx << std::endl;
+    //  std::cout << "First_idx: " << first_idx << std::endl;
+    //  std::cout << "Last_idx: " << last_idx << std::endl;
 
     for (int i = first_idx; i < last_idx; ++i) {
       const int idx1 = is_outer ? i : other_idx;
@@ -99,9 +99,9 @@ std::vector<FrsSelectInfo> GetParamsToSearchOver(const FrsTotal& frs,
 			for (int i = 0; i < mega_u.au_.size(); ++i) {
 				const double center_k = mega_u.au_.at(i).GetCenterK();
 				if ((center_k >= min_spd_au) and (center_k <= max_spd_au)) {
-					std::cout << "Center K: " << center_k << "[idx: " << i << "]" << std::endl;
+					// std::cout << "Center K: " << center_k << "[idx: " << i << "]" << std::endl;
         	add_frs(i, i+1, is_table_populated, mega_u, manu_type, au_u0_idx, true, 0, false);
-          std::cout << "Adding SPEED CHANGE [TOTAL SIZE: " << frses_to_search.size() << "] [NO SPD: " << mega_u.au_.size() << "]" << std::endl;
+          // std::cout << "Adding SPEED CHANGE [TOTAL SIZE: " << frses_to_search.size() << "] [NO SPD: " << mega_u.au_.size() << "]" << std::endl;
 				}
 			}
       //del TODO FIXME const long num_au_above = 2;
@@ -138,22 +138,22 @@ std::vector<FrsSelectInfo> GetParamsToSearchOver(const FrsTotal& frs,
             static_cast<int>(manu_set.at(i).size());  // TODO Remove Min
         // const int num_search = std::min(
         //    1, static_cast<int>(manu_set.at(i).size()));  // TODO Remove Min
-        std::cout << "UIDX: " << u0_idx << "]" << std::endl;
+        // std::cout << "UIDX: " << u0_idx << "]" << std::endl;
         add_frs(0, num_search, is_table_populated, mega_u, manu_type, u0_idx,
                 false, i, true);
-        std::cout << "Adding D/LAN CHANGE [TOTAL SIZE: " << frses_to_search.size() << "]" << std::endl;
+        // std::cout << "Adding D/LAN CHANGE [TOTAL SIZE: " << frses_to_search.size() << "]" << std::endl;
       }
     };
     if (search_lan) {
       //DEL TODO REMOVE ROS_INFO("SEARCH LAN");
-      std::cout << "STARTING SEARCH LAN QINGYI" << std::endl;
+      // std::cout << "STARTING SEARCH LAN QINGYI" << std::endl;
       add_dir_lan_frs(ManuType::kLanChange);
     }
 
     if (search_dir) {
       //DEL TODO REMOVE ROS_INFO_STREAM("SEARCH DIR");
       //DEL std::cout << "SEARCH DIR" << std::endl;
-      std::cout << "STARTING SEARCH DIR QINGYI" << std::endl;
+      // std::cout << "STARTING SEARCH DIR QINGYI" << std::endl;
       add_dir_lan_frs(ManuType::kDirChange);
     }
   }
@@ -201,13 +201,13 @@ SimParam GenerateSimParameter(
     ::roahm::RoverState fp_state) {
   const auto x_des_mirror = x_des_local.Mirror();
   const auto gen_param_start_time = Tick();
-  std::cout << "State to search: " << fp_state.ToStringXYHUVR() << std::endl;
+  // std::cout << "State to search: " << fp_state.ToStringXYHUVR() << std::endl;
 
   // NOTE: fp_state u, v, r can be modified here.
   const auto frses_to_search =
       GetParamsToSearchOver(frs, fp_state.u_, fp_state.v_, fp_state.r_);
 
-  std::cout << "number of frses to search: " << frses_to_search.size() << std::endl;
+  // std::cout << "number of frses to search: " << frses_to_search.size() << std::endl;
   //DEL WGUARD_ROS_INFO_STREAM(
   //DEL     "number of frses to search: " << frses_to_search.size());
 
@@ -221,7 +221,7 @@ SimParam GenerateSimParameter(
   const int num_apps = 13;
 
   //DEL WGUARD_ROS_INFO("APP INIT");
-  std::cout << "APP INIT" << std::endl;
+  // std::cout << "APP INIT" << std::endl;
   // Initialize and set options on IPOPT
   const auto app_vec = GetIpApps(num_apps);
 
@@ -237,22 +237,22 @@ SimParam GenerateSimParameter(
   std::vector<int> success_vals(num_search);
 	constexpr double kBigCost = 1.0e+10;
 
-  std::cout << "____FOR_TIMING_BEGIN" << std::endl;
+  // std::cout << "____FOR_TIMING_BEGIN" << std::endl;
   const auto C_t1 = Tick();
   //DEL std::cout << "NUM SEARCH: " << num_search << std::endl;
   // TODO could just use a std::atomic<int> for the index.
   for (int outer_idx = 0; outer_idx < num_outer; ++outer_idx) {
     // Run each ipopt application in parallel
-// #pragma omp parallel for  // JL: serial for debugging
+#pragma omp parallel for  // JL: serial for debugging
     for (int app_idx = 0; app_idx < num_apps; ++app_idx) {
       const int total_idx = next_idx++;
       if (total_idx >= num_search) {
         continue;
       }
-      std::cout << "____FOR_TIMING_TOTAL_IDX_BEGIN: " << total_idx << std::endl;
+      // std::cout << "____FOR_TIMING_TOTAL_IDX_BEGIN: " << total_idx << std::endl;
       auto& app = app_vec.at(app_idx);
       if (app->Initialize() != Ipopt::Solve_Succeeded) {
-        std::cout << "\n\n*** Error during IPOPT initialization!" << std::endl;
+        // std::cout << "\n\n*** Error during IPOPT initialization!" << std::endl;
       }
       const auto& frs_select_info = frses_to_search.at(total_idx);
 			const auto curr_manu_type = frs_select_info.manu_type_;
@@ -299,11 +299,11 @@ SimParam GenerateSimParameter(
           frs_to_use, zono_desired_idx, fp_state.u_, v_to_use, r_to_use,
           x_des_to_use.x_, x_des_to_use.y_, x_des_to_use.h_);
       const auto JL_t2 = Tick();
-      std::cout << "Cost Generation Time: " << GetDeltaS(JL_t2, JL_t1) << std::endl;
+      // std::cout << "Cost Generation Time: " << GetDeltaS(JL_t2, JL_t1) << std::endl;
       auto sliced = frs_to_use.SliceAt(fp_state.u_, v_to_use, r_to_use);
       const auto cons = GenerateConstraints(sliced, obs_info_to_use);
       const auto JL_t3 = Tick();
-      std::cout << "Constraint Generation Time: " << GetDeltaS(JL_t3, JL_t2) << std::endl;
+      // std::cout << "Constraint Generation Time: " << GetDeltaS(JL_t3, JL_t2) << std::endl;
       std::shared_ptr<Ipopt::Number[]> a_mat = cons.a_con_arr_;
       std::shared_ptr<Ipopt::Number[]> b_mat = cons.b_con_arr_;
 
@@ -347,9 +347,9 @@ SimParam GenerateSimParameter(
 				const double dy = delta_y_vals.at(total_idx);
         const std::string str_manu = ToString(frs_select_info.manu_type_);
         const bool really_feas = was_really_feasible;
-        std::cout << "IPOPT SUCCESS [K: " << k << "] [Cost: " << cost << "] [Manu: " << str_manu << "] [RF: " << really_feas << "] [DY: " << dy << "] [X_DES_Y: " << x_des_to_use.y_ << "] [MIRROR: " << mirror_mult << "] [UNMIR FRS DY: " << unmir_frs_dy << "] [IPOPT_ACTUAL: " << ipopt_success << "] [FEAS: " << was_really_feasible << "]" << std::endl;
-        std::cout << "Agent State: " << fp_state.x_ << ", " << fp_state.y_ << ", " << fp_state.GetHeading() << std::endl;
-        std::cout << "xyh (end): " << *(frs_to_use.xy_centers_.end()-2) << ", " << *(frs_to_use.xy_centers_.end()-1) << ", " << frs_to_use.h_centers_.back() << std::endl;
+        // std::cout << "IPOPT SUCCESS [K: " << k << "] [Cost: " << cost << "] [Manu: " << str_manu << "] [RF: " << really_feas << "] [DY: " << dy << "] [X_DES_Y: " << x_des_to_use.y_ << "] [MIRROR: " << mirror_mult << "] [UNMIR FRS DY: " << unmir_frs_dy << "] [IPOPT_ACTUAL: " << ipopt_success << "] [FEAS: " << was_really_feasible << "]" << std::endl;
+        // std::cout << "Agent State: " << fp_state.x_ << ", " << fp_state.y_ << ", " << fp_state.GetHeading() << std::endl;
+        // std::cout << "xyh (end): " << *(frs_to_use.xy_centers_.end()-2) << ", " << *(frs_to_use.xy_centers_.end()-1) << ", " << frs_to_use.h_centers_.back() << std::endl;
       } else {
         cost_vals.at(total_idx) = kBigCost;
         success_vals.at(total_idx) = false;
@@ -359,21 +359,21 @@ SimParam GenerateSimParameter(
         ++failure_runs;
       }
 
-      std::cout << "____FOR_TIMING_TOTAL_IDX_END: " << total_idx << std::endl;
+      // std::cout << "____FOR_TIMING_TOTAL_IDX_END: " << total_idx << std::endl;
 
     }
   }
   const auto gen_param_end_time = Tick();
   std::cout << "Time: " << GetDeltaS(gen_param_end_time, gen_param_start_time)
             << std::endl;
-  std::cout << "Successful: " << successful_runs << std::endl;
-  std::cout << "Failed:     " << failure_runs << std::endl;
+  // std::cout << "Successful: " << successful_runs << std::endl;
+  // std::cout << "Failed:     " << failure_runs << std::endl;
 
   // JL add to debug
-  std::cout << "cost value \n";
-  for (int JL_idx = 0; JL_idx < cost_vals.size(); JL_idx++) {
-	  std::cout << "cost = " << cost_vals.at(JL_idx) << " (manu:" << IsSpd(frses_to_search.at(JL_idx).manu_type_) << IsDir(frses_to_search.at(JL_idx).manu_type_) << IsLan(frses_to_search.at(JL_idx).manu_type_) << " )" << param_vals_mirrored.at(JL_idx) << "\n"; 
-  }
+  // std::cout << "cost value \n";
+  // for (int JL_idx = 0; JL_idx < cost_vals.size(); JL_idx++) {
+	//   std::cout << "cost = " << cost_vals.at(JL_idx) << " (manu:" << IsSpd(frses_to_search.at(JL_idx).manu_type_) << IsDir(frses_to_search.at(JL_idx).manu_type_) << IsLan(frses_to_search.at(JL_idx).manu_type_) << " )" << param_vals_mirrored.at(JL_idx) << "\n"; 
+  // }
 
 
   if (frses_to_search.empty()) {
@@ -419,7 +419,7 @@ SimParam GenerateSimParameter(
 			}
 		}
 	} else if ((not min_cost_is_lan) and ((not initial_min_cost_close_enough) or ini_min_cost_close_but_hi_spd_dir) and (init_speed_high_enough_for_lan or wpt_is_close_n_diff_lane)) {
-		std::cout << "[LAN] INITIAL VAL NOT CLOSE ENOUGH" << std::endl;
+		// std::cout << "[LAN] INITIAL VAL NOT CLOSE ENOUGH" << std::endl;
 		for (int i = 0; i < cost_vals.size(); ++i) {
 		  const auto manu_info = frses_to_search.at(i);
 			const double cost = cost_vals.at(i);
@@ -429,10 +429,10 @@ SimParam GenerateSimParameter(
 				continue;
 			}
 			const double dy = delta_y_vals.at(i);
-			std::cout << "[LAN] [DY]: " << dy << std::endl;
+			// std::cout << "[LAN] [DY]: " << dy << std::endl;
 			if (std::abs(dy) < 7.0) {
 			//if (true /* and std::abs(dy) > 1.5 */ ) {
-				std::cout << "[LAN] [Choosing DY]: " << dy << std::endl;
+				// std::cout << "[LAN] [Choosing DY]: " << dy << std::endl;
 				if ((not min_cost_is_lan) or (cost < curr_min_cost)) {
 			    min_cost_idx = i;
 				  min_cost_is_lan = true;
@@ -443,11 +443,11 @@ SimParam GenerateSimParameter(
 	}
 	}
 
-  const auto C_t2 = Tick();
-  std::cout << "FULL solve time" << GetDeltaS(C_t2, C_t1) << std::endl;
-  std::cout << "____FOR_TIMING_TOTAL_IDX_OPTIMAL: " << min_cost_idx << std::endl;
-  std::cout << "____FOR_TIMING_END" << std::endl;
-  std::cout << "##################################################" << std::endl;
+  // const auto C_t2 = Tick();
+  // std::cout << "FULL solve time" << GetDeltaS(C_t2, C_t1) << std::endl;
+  // std::cout << "____FOR_TIMING_TOTAL_IDX_OPTIMAL: " << min_cost_idx << std::endl;
+  // std::cout << "____FOR_TIMING_END" << std::endl;
+  // std::cout << "##################################################" << std::endl;
   
   const auto frs_min_info = frses_to_search.at(min_cost_idx);
   const int t0_idx_c_style = frs_min_info.idx1_;
@@ -584,7 +584,7 @@ class MexFunction : public matlab::mex::Function {
                   << kExpectedMinDim1 << "\n";
         return;
       }
-			std::cout << "[DBGOBS] Num Obs: " << d1 << std::endl;
+			// std::cout << "[DBGOBS] Num Obs: " << d1 << std::endl;
       for (int obs_idx = 0; obs_idx < d1; ++obs_idx) {
         const double x0 = obs_var[0][obs_idx];
         const double y0 = obs_var[1][obs_idx];
@@ -594,7 +594,7 @@ class MexFunction : public matlab::mex::Function {
         const double wid = obs_var[5][obs_idx];
         ::roahm::DynObs dyn_obs{x0, y0, h0, vel, len, wid};
         global_obs_info.PushObs(dyn_obs);
-        std::cout << dyn_obs << std::endl;
+        // std::cout << dyn_obs << std::endl;
       }
     }
     {
