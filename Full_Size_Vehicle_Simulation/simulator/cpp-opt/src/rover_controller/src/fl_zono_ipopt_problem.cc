@@ -170,7 +170,7 @@ bool FlZonoIpoptProblem::eval_g(Index n, const Number* x, bool new_x, Index m,
       prev_min_cost_ = curr_cost;
       prev_min_k_ = x[0];
 			if (std::abs(prev_min_k_) < 5.0) {
-				std::cout << "[DBG] [LAN/DIR] Feasible Cost: " << curr_cost << " [K: " << prev_min_k_ << "]" << std::endl;
+				// std::cout << "[DBG] [LAN/DIR] Feasible Cost: " << curr_cost << " [K: " << prev_min_k_ << "]" << std::endl;
 			}
     }
     feasible_found_ = true;
@@ -195,12 +195,12 @@ double FlZonoIpoptProblem::eval_g_timed(Index n, const Number* x, bool new_x, In
       prev_min_cost_ = curr_cost;
       prev_min_k_ = x[0];
 			if (std::abs(prev_min_k_) < 5.0) {
-				std::cout << "[DBG] [LAN/DIR] Feasible Cost: " << curr_cost << " [K: " << prev_min_k_ << "]" << std::endl;
+				// std::cout << "[DBG] [LAN/DIR] Feasible Cost: " << curr_cost << " [K: " << prev_min_k_ << "]" << std::endl;
 			}
     }
     feasible_found_ = true;
   } else {
-		std::cout << "[DBG] No feasible solution at " << x[0] << std::endl;
+		// std::cout << "[DBG] No feasible solution at " << x[0] << std::endl;
 	}
 
   const auto C_t11 = Tick();
@@ -316,8 +316,8 @@ void FlZonoIpoptProblem::finalize_solution(
     const Number* z_U, Index m, const Number* g, const Number* lambda,
     Number obj_value, const IpoptData* ip_data,
     IpoptCalculatedQuantities* ip_cq) {
-  ROS_INFO_STREAM("K: " << x[0] << "out of [" << k_min_ << ", " << k_max_
-                        << "]");
+  // ROS_INFO_STREAM("K: " << x[0] << "out of [" << k_min_ << ", " << k_max_
+  //                       << "]");
   sln_k_ = x[0];
 }
 

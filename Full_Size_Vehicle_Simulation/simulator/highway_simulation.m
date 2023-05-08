@@ -12,7 +12,7 @@ end
 
 plot_sim_flag = 1;
 plot_AH_flag = 1;
-save_result = false; % make it true if you want to save the simulation data
+save_result = true; % make it true if you want to save the simulation data
 
 %% set up required objects for simulation
 lanewidth = 3.7;

@@ -625,7 +625,7 @@ double FrsTotal::MaxU0() const { return u0_max_; }
 long FrsTotal::SelectU0Idx(double& u0, bool can_clamp_u) const {
   if (can_clamp_u) {
     u0 = ClampWithWarn(u0, MinU0(), MaxU0(), "U0");
-    std::cout << "CHALLEN U0: " << u0 << std::endl;
+    // std::cout << "CHALLEN U0: " << u0 << std::endl;
     // std::cout << "CHALLEN Umax: " << MaxU0() << std::endl;
   }
   const auto comp_dist_to_u0 = [u0](const Interval& a, const Interval& b) {

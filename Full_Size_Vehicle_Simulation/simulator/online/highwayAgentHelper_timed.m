@@ -76,7 +76,7 @@ classdef highwayAgentHelper_timed < agentHelper
             %FOR JON, do local frame transformation of obstacles in order
             %to output vertices for Qingyi
             dyn_obs_local = dyn_obs_mex;
-            world_to_local(agent_state_mex(1:3), dyn_obs_mex(1:3,:))
+            world_to_local(agent_state_mex(1:3), dyn_obs_mex(1:3,:));
             dyn_obs_local(1:3,:) = world_to_local(agent_state_mex(1:3), dyn_obs_mex(1:3,:));
 
             %% ####################### NEW GENERATOR METHOD FOR QINGYI
@@ -211,13 +211,13 @@ classdef highwayAgentHelper_timed < agentHelper
                 %% Call New function to run constraint evaluation time test
                 %comment out during normal operation
 
-                num_k = 10; %number of k values you want to evaluate
-                tic
-                times = time_cons_eval(AH,agent_state_mex, x_des_mex, dyn_obs_mex,...
-                        spd_FRS_ranges,lan_FRS_ranges,dir_FRS_ranges,...
-                        FRS_types,bin_indices_j,obstacles_are_mirrored,num_k);
-
-                toc
+%                 num_k = 10; %number of k values you want to evaluate
+%                 tic
+%                 times = time_cons_eval(AH,agent_state_mex, x_des_mex, dyn_obs_mex,...
+%                         spd_FRS_ranges,lan_FRS_ranges,dir_FRS_ranges,...
+%                         FRS_types,bin_indices_j,obstacles_are_mirrored,num_k);
+% 
+%                 toc
 
 
 

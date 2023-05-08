@@ -613,9 +613,9 @@ class MexFunction : public matlab::mex::Function {
     }
 
     auto& param_output = outputs[0];
-    std::cout << "Successfully passed I/O check" << std::endl;
-    std::cout << "FRS: " << frs_.megas_.size() << std::endl;
-    std::cout << "global_obs: " << global_obs_info.GetNumObs() << std::endl;
+    // std::cout << "Successfully passed I/O check" << std::endl;
+    // std::cout << "FRS: " << frs_.megas_.size() << std::endl;
+    // std::cout << "global_obs: " << global_obs_info.GetNumObs() << std::endl;
     auto x_des_local = x_des_global.ToLocalFrame(::roahm::PointXYH{rover_state.x_, rover_state.y_, rover_state.GetHeading()});;
     auto ret = GenerateSimParameter(
       frs_,
@@ -630,18 +630,18 @@ class MexFunction : public matlab::mex::Function {
     const double au_val = IsSpd(ret.manu_type_) ? param_val : rover_state.u_;
     const double ay_val = IsSpd(ret.manu_type_) ? 0.0 : param_val;
 
-    std::cout << "Was Successful: " << ret.successful_ << std::endl;
-    std::cout << "Au Val:         " << au_val << std::endl;
-    std::cout << "Ay Val:         " << ay_val << std::endl;
-    std::cout << "Param Val:      " << param_val << std::endl;
-    std::cout << "Manu Type: " << matlab_manu_type << std::endl;
-    std::cout << "| Speed: " << IsSpd(ret.manu_type_) << std::endl;
-    std::cout << "| Dir:   " << IsDir(ret.manu_type_) << std::endl;
-    std::cout << "| Lan:   " << IsLan(ret.manu_type_) << std::endl;
+    // std::cout << "Was Successful: " << ret.successful_ << std::endl;
+    // std::cout << "Au Val:         " << au_val << std::endl;
+    // std::cout << "Ay Val:         " << ay_val << std::endl;
+    // std::cout << "Param Val:      " << param_val << std::endl;
+    // std::cout << "Manu Type: " << matlab_manu_type << std::endl;
+    // std::cout << "| Speed: " << IsSpd(ret.manu_type_) << std::endl;
+    // std::cout << "| Dir:   " << IsDir(ret.manu_type_) << std::endl;
+    // std::cout << "| Lan:   " << IsLan(ret.manu_type_) << std::endl;
 
 
     param_output = factory.createArray<double>({6, 1}, {au_val, ay_val, t0_idx, matlab_manu_type, ret.idx0_, ret.idx1_});
-    std::cout << "Ran Simulation" << std::endl;
+    // std::cout << "Ran Simulation" << std::endl;
   }
 };
 

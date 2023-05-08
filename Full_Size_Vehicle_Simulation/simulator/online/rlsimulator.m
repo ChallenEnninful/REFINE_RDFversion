@@ -57,7 +57,7 @@ classdef rlsimulator < handle
                 t_real_start_arr = S.AH.t_real_start;
                 t_proposed_start_arr = S.AH.t_proposed_start;
                 t_move =  S.AH.t_move;
-                plotting_param = S.AH.FRS_plotting_param;
+%                 plotting_param = S.AH.FRS_plotting_param;
                 envCars = S.W.envCars;
                 hist_info.K_hist = S.AH.K_hist;
                 hist_info.FRS_hist = S.AH.FRS_hist;
@@ -66,8 +66,9 @@ classdef rlsimulator < handle
                 hist_info.state_hist = S.AH.state_hist;
                 hist_info.time_hist = S.AH.time_hist;
                 hist_info.wp_hist = S.wp_hist;
-                hist_info.solve_time_hist = S.AH.solve_time_hist;                
-                save(Filename,'hist_info','agent_info','world_info','ref_Z','proposed_ref_Z','plotting_param','T','t_move','t_real_start_arr','t_proposed_start_arr','envCars')
+                hist_info.solve_time_hist = S.AH.solve_time_hist;  
+                save(Filename,'hist_info','agent_info','world_info','ref_Z','proposed_ref_Z','T','t_move','t_real_start_arr','t_proposed_start_arr','envCars')
+%                 save(Filename,'hist_info','agent_info','world_info','ref_Z','proposed_ref_Z','plotting_param','T','t_move','t_real_start_arr','t_proposed_start_arr','envCars')
             end
             
             drawnow;

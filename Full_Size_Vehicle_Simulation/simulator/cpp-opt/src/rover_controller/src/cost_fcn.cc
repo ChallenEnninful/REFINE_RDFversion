@@ -23,7 +23,7 @@ CostFcnInfo GenCostFcn(const Vehrs& vehrs, const IndexT desired_idx,
   CostFcnInfo cost_fcn_info;
   const auto& slc =
       vehrs.slc_infos_.at(desired_idx).Slice(state_u, state_v, state_r);
-	std::cout << "[LAN] Desired Idx: " << desired_idx << std::endl;
+	// std::cout << "[LAN] Desired Idx: " << desired_idx << std::endl;
   const double c_x = vehrs.xy_centers_[desired_idx * 2 + 0] + slc.x_sliced_sum_;
   const double c_y = vehrs.xy_centers_[desired_idx * 2 + 1] + slc.y_sliced_sum_;
   const double c_h = vehrs.h_centers_[desired_idx] + slc.h_sliced_sum_;
@@ -43,7 +43,7 @@ CostFcnInfo GenCostFcn(const Vehrs& vehrs, const IndexT desired_idx,
 
 double CostFcnInfo::ComputeDeltaY(const double k, const double k_min, double k_max) const {
   const double lambda = (k - c_k_) / g_k_;
-	std::cout << "[LAN] [K: " << k << "] [C_K: " << c_k_ << "] [G_K: " << g_k_ << "] [Lambda: " << lambda << "] [C_Y: " << c_y_ << "] [G_Y: " << g_y_ << "]" << std::endl;
+	// std::cout << "[LAN] [K: " << k << "] [C_K: " << c_k_ << "] [G_K: " << g_k_ << "] [Lambda: " << lambda << "] [C_Y: " << c_y_ << "] [G_Y: " << g_y_ << "]" << std::endl;
   return c_y_ + (lambda * g_y_);
 }
 double CostFcnInfo::ComputeDeltaH(const double k, const double k_min, double k_max) const {
