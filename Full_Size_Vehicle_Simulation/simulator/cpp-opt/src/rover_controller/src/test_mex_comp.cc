@@ -207,7 +207,7 @@ SimParam GenerateSimParameter(
   const auto frses_to_search =
       GetParamsToSearchOver(frs, fp_state.u_, fp_state.v_, fp_state.r_);
 
-  // std::cout << "number of frses to search: " << frses_to_search.size() << std::endl;
+  std::cout << "number of frses to search: " << frses_to_search.size() << std::endl;
   //DEL WGUARD_ROS_INFO_STREAM(
   //DEL     "number of frses to search: " << frses_to_search.size());
 
@@ -245,7 +245,10 @@ SimParam GenerateSimParameter(
     // Run each ipopt application in parallel
 #pragma omp parallel for  // JL: serial for debugging
     for (int app_idx = 0; app_idx < num_apps; ++app_idx) {
-      const int total_idx = next_idx++;
+      // QC: ?
+      // std::cout << app_idx << std::endl; 
+      // const int total_idx = next_idx++;
+      // std::cout << total_idx << std::endl; 
       if (total_idx >= num_search) {
         continue;
       }
@@ -361,6 +364,12 @@ SimParam GenerateSimParameter(
 
       // std::cout << "____FOR_TIMING_TOTAL_IDX_END: " << total_idx << std::endl;
 
+      // QC: print optimization statistics
+      int ipopt_solution_status = ipopt_success? 0 : 1;
+      std::cout << "Ipopt " << ipopt_solution_status << " " << mnlp->num_cost_calls << " " << mnlp->num_gradient_calls
+        << " " << mnlp->num_constraint_calls << " " << mnlp->num_jacobian_calls
+        << " " << mnlp->reused_gradient_calls << " " << mnlp->reused_jacobian_calls << "\n"; 
+      // QC: print optimization statistics
     }
   }
   const auto gen_param_end_time = Tick();

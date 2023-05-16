@@ -93,6 +93,9 @@ bool FlZonoIpoptProblem::get_starting_point(Index n, bool init_x, Number* x,
 
 bool FlZonoIpoptProblem::eval_f(Index n, const Number* x, bool new_x,
                                 Number& obj_value) {
+  // QC: Add counter for IPOPT evaluations
+  this->num_cost_calls++;
+  // QC: Add counter for IPOPT evaluations
   const Number k_curr = x[0];
   ComputeCostAndDerivs(k_curr);
   obj_value = cost_k_;
@@ -103,8 +106,15 @@ bool FlZonoIpoptProblem::eval_grad_f(Index n, const Number* x, bool new_x,
                                      Number* grad_f) {
   // Already computed with the cost to ComputeCosts in eval_f
   // const auto C_t1 = Tick();
+  // QC: Add counter for IPOPT evaluations
+  this->num_gradient_calls++;
+  // QC: Add counter for IPOPT evaluations
   if (cost_used_k_ != x[0]) {  // JL: add safeguard
     ComputeCostAndDerivs(x[0]);
+  } else {
+    // QC: Add counter for IPOPT evaluations
+    this->reused_gradient_calls++;
+    // QC: Add counter for IPOPT evaluations
   }
   grad_f[0] = jac_k_;
   // const auto C_t2 = Tick();
@@ -152,6 +162,9 @@ double FlZonoIpoptProblem::ComputeConstraint(const Number* x, Index m,
 
 bool FlZonoIpoptProblem::eval_g(Index n, const Number* x, bool new_x, Index m,
                                 Number* g) {
+  // QC: Add counter for IPOPT evaluations
+  this->num_constraint_calls++;
+  // QC: Add counter for IPOPT evaluations
   double max_of_all_constraints = ComputeConstraint(x, m, g);
 
   // std::cout << "CONSTRAINT EVAL" << std::endl;
@@ -211,7 +224,9 @@ double FlZonoIpoptProblem::eval_g_timed(Index n, const Number* x, bool new_x, In
 bool FlZonoIpoptProblem::eval_jac_g(Index n, const Number* x, bool new_x,
                                     Index m, Index nele_jac, Index* iRow,
                                     Index* jCol, Number* values) {
-                                      
+  // QC: Add counter for IPOPT evaluations
+  this->num_jacobian_calls++;
+  // QC: Add counter for IPOPT evaluations
   // std::cout << "CONS JAC EVAL" << std::endl;
   // std::cout << "n:" << n << std::endl;
   // std::cout << "x:" << x << std::endl;
@@ -235,9 +250,14 @@ bool FlZonoIpoptProblem::eval_jac_g(Index n, const Number* x, bool new_x,
   } else {
     // return the values of the jacobian of the constraints
     // element at i,j: grad_{x_j} g_{i}(x)
-    if (constr_used_k_ != x[0])
+    if (constr_used_k_ != x[0]) {
       ComputeConstraint(x, m,
                         values);  // JL: add safeguard. Notices values has
+    } else {
+      // QC: Add counter for IPOPT evaluations
+      this->reused_jacobian_calls++;
+      // QC: Add counter for IPOPT evaluations
+    }
     // the same length as g, but values will be
     // recomputed in the next for loop
 
