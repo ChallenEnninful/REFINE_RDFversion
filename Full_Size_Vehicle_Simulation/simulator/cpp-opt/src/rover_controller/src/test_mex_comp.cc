@@ -207,7 +207,7 @@ SimParam GenerateSimParameter(
   const auto frses_to_search =
       GetParamsToSearchOver(frs, fp_state.u_, fp_state.v_, fp_state.r_);
 
-  // std::cout << "number of frses to search: " << frses_to_search.size() << std::endl;
+  std::cout << "number of frses to search: " << frses_to_search.size() << std::endl;
   //DEL WGUARD_ROS_INFO_STREAM(
   //DEL     "number of frses to search: " << frses_to_search.size());
 
@@ -237,6 +237,16 @@ SimParam GenerateSimParameter(
   std::vector<int> success_vals(num_search);
 	constexpr double kBigCost = 1.0e+10;
 
+  // QC: store Ipopt statistics
+  std::vector<int> ipopt_return_status(num_search);
+  std::vector<unsigned int> num_cost_calls(num_search);
+  std::vector<unsigned int> num_gradient_calls(num_search);
+  std::vector<unsigned int> num_constraint_calls(num_search);
+  std::vector<unsigned int> num_jacobian_calls(num_search);
+  std::vector<unsigned int> num_reused_gradient_calls(num_search);
+  std::vector<unsigned int> num_reused_jacobian_calls(num_search);
+  //
+
   // std::cout << "____FOR_TIMING_BEGIN" << std::endl;
   const auto C_t1 = Tick();
   //DEL std::cout << "NUM SEARCH: " << num_search << std::endl;
@@ -245,6 +255,8 @@ SimParam GenerateSimParameter(
     // Run each ipopt application in parallel
 #pragma omp parallel for  // JL: serial for debugging
     for (int app_idx = 0; app_idx < num_apps; ++app_idx) {
+      // QC: ?
+      // std::cout << app_idx << std::endl; 
       const int total_idx = next_idx++;
       if (total_idx >= num_search) {
         continue;
@@ -361,11 +373,32 @@ SimParam GenerateSimParameter(
 
       // std::cout << "____FOR_TIMING_TOTAL_IDX_END: " << total_idx << std::endl;
 
+      // QC: collect optimization statistics
+      ipopt_return_status.at(total_idx) = ipopt_success? 0 : 1;
+      num_cost_calls.at(total_idx) = mnlp->num_cost_calls;
+      num_gradient_calls.at(total_idx) = mnlp->num_gradient_calls;
+      num_constraint_calls.at(total_idx) = mnlp->num_constraint_calls;
+      num_jacobian_calls.at(total_idx) = mnlp->num_jacobian_calls;
+      num_reused_gradient_calls.at(total_idx) = mnlp->reused_gradient_calls;
+      num_reused_jacobian_calls.at(total_idx) = mnlp->reused_jacobian_calls;
+
+      // int ipopt_solution_status = ipopt_success? 0 : 1;
+      // std::cout << "Ipopt " << ipopt_solution_status << " " << mnlp->num_cost_calls << " " << mnlp->num_gradient_calls
+      //   << " " << mnlp->num_constraint_calls << " " << mnlp->num_jacobian_calls
+      //   << " " << mnlp->reused_gradient_calls << " " << mnlp->reused_jacobian_calls << "\n"; 
+      // QC: print optimization statistics
     }
   }
   const auto gen_param_end_time = Tick();
   std::cout << "Time: " << GetDeltaS(gen_param_end_time, gen_param_start_time)
             << std::endl;
+  for (unsigned int i = 0; i < num_search; i++) {
+    std::cout << "Ipopt " << ipopt_return_status.at(i) << " " << num_cost_calls.at(i) << " " << num_gradient_calls.at(i)
+      << " " << num_constraint_calls.at(i) << " " << num_jacobian_calls.at(i)
+      << " " << num_reused_gradient_calls.at(i) << " " << num_reused_jacobian_calls.at(i) << "\n"; 
+  }
+
+  
   // std::cout << "Successful: " << successful_runs << std::endl;
   // std::cout << "Failed:     " << failure_runs << std::endl;
 

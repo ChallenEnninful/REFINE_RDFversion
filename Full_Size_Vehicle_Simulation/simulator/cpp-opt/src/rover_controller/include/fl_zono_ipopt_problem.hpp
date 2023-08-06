@@ -60,6 +60,15 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
   Number constr_used_k_;
 
  public:
+  // QC: Add counter for IPOPT evaluations
+  unsigned int num_cost_calls = 0;
+  unsigned int num_gradient_calls = 0;
+  unsigned int num_constraint_calls = 0;
+  unsigned int num_jacobian_calls = 0;
+  unsigned int reused_gradient_calls = 0;
+  unsigned int reused_jacobian_calls = 0;
+  // QC: Add counter for IPOPT evaluations
+
   /// The solution as provided by finalize_solution, only contains a valid value
   /// if IPOPT was successful as of finalize_solution
   double sln_k_;
