@@ -13,6 +13,7 @@ end
 plot_sim_flag = 1;
 plot_AH_flag = 1;
 save_result = true; % make it true if you want to save the simulation data
+save_video = false; %make it true if you want to save videos of the trials
 
 %% set up required objects for simulation
 lanewidth = 3.7;
@@ -31,7 +32,7 @@ hlp_lookahead = 90;
 lane_changeFRS_log = {};
 
 
-for j = 1:1000 
+for j = 49:1000 
     % RESET simulation environment
     World = dynamic_car_world( 'bounds', bounds, ...
         'buffer', world_buffer, 'goal', [1010;3.7], ...
@@ -47,7 +48,8 @@ for j = 1:1000
     AgentHelper = highwayAgentHelper_timed(Agent,frs,HLP,'t_plan',t_plan,'t_move',t_move,'t_failsafe_move',t_failsafe_move,...
         'verbose',verbose_level); % takes care of online planning
     AgentHelper.FRS_u0_p_maps = load("u0_p_maps.mat");
-    Simulator = rlsimulator(AgentHelper,World,'plot_sim_flag',plot_sim_flag,'plot_AH_flag',plot_AH_flag,'save_result',save_result);
+    Simulator = rlsimulator(AgentHelper,World,'plot_sim_flag',plot_sim_flag,'plot_AH_flag',plot_AH_flag,'save_result',save_result,...
+        'save_video',save_video,'epscur',j);
 
     AgentHelper.S = Simulator;
     Simulator.eval = 1; %turn on evaluation so summary will be saved

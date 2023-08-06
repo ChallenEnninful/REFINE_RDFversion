@@ -11,11 +11,20 @@ classdef rlsimulator < handle
         W
         
         fig_num = 1
-        epscur = 1;
+        epscur
         time_vec=[];
         wp_hist = [];
 
         save_result = false;
+        save_video = false;
+        videoObj = [];
+        video_dt = 0.01;
+        video_dt_multiplier = 2;
+
+        t_now = 0;
+
+        plot_fancy_vehicle = false;
+        visualize = 1;
     end
 
     methods
@@ -24,7 +33,16 @@ classdef rlsimulator < handle
             S = parse_args(S,varargin{:}) ;
             S.AH = AH;
             S.W  = W;
-            figure(1);
+            if S.visualize
+                figure(1);
+                set(gcf,'Position',[-491.8000 1.0682e+03 1900 842.4000]);
+            end
+            if S.save_video
+                Videoname = sprintf('REFINE_SceIdx-%s', num2str(S.epscur));
+                S.videoObj = VideoWriter(Videoname,'Motion JPEG AVI');
+                S.videoObj.FrameRate = 1/(S.video_dt * S.video_dt_multiplier);
+                open(S.videoObj);
+            end
         end
         
         %% step
@@ -35,22 +53,105 @@ classdef rlsimulator < handle
             world_info = S.W.get_world_info(agent_info);%where obstacles are
             % move 
             [action_replaced, replace_distance, stuck, k, wp] = S.AH.advanced_move(action,world_info);
+            agent_info = S.AH.get_agent_info();
+%             collision = S.W.collision_check(agent_info);
+            collision = 0;
+
+            % visualization
+            if ~S.plot_fancy_vehicle && S.visualize
+                S.plot();
+                scatter(wp(1), wp(2), 360,'k','x','LineWidth',5);
+            end
+            if S.visualize
+                while abs(S.t_now - S.AH.A.time(end)) > S.video_dt
+                    if S.plot_fancy_vehicle
+                        S.plot();
+                        scatter(wp(1), wp(2), 360,'k','x','LineWidth',5);
+                    end
+                    % ego vehicle
+                    idx = find(S.AH.A.time <= S.t_now, 1, 'last');
+                    alpha = (S.t_now - S.AH.A.time(idx)) / (S.AH.A.time(idx+1) - S.AH.A.time(idx));
+                    state_now = S.AH.A.state(:,idx)*(1-alpha) + S.AH.A.state(:,idx+1)*alpha;
+                    xy_now = state_now(1:2);
+                    h_now = state_now(3);
+                    if ~S.plot_fancy_vehicle
+                        footprint = [cos(h_now), -sin(h_now); sin(h_now) cos(h_now)]*[-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+xy_now;
+                        S.AH.A.plot_data.footprint.Vertices = footprint';
+                    else
+                        plot_vehicle(xy_now(1), xy_now(2), h_now, [0,0,0]/255, [140,140,140]/255, 1);
+                    end
+                    plot([S.AH.A.state(1,1:idx),xy_now(1)],[S.AH.A.state(2,1:idx),xy_now(2)],'k','LineWidth',2);
+    
+                    % move other vehicle
+                    num_static_obstacle = S.W.num_cars - S.W.num_moving_cars-1;
+                    if S.plot_fancy_vehicle % plot static vehicle
+                        for i = 1:num_static_obstacle
+                            x_now = S.W.envCars(i+1,1);
+                            y_now = S.W.envCars(i+1,3);
+                            plot_vehicle(x_now,y_now,0, [255,255,255]/255, [200,200,200]/255, 1);
+                        end
+                    end
+                    for i = 1:S.W.num_moving_cars
+                        v_now = S.W.envCars(i+num_static_obstacle+1,2); 
+                        x_now = S.W.envCars(i+num_static_obstacle+1,1) + v_now * S.t_now;
+                        y_now = S.W.envCars(i+num_static_obstacle+1,3); 
+                        if S.plot_fancy_vehicle
+                            plot_vehicle(x_now,y_now,0, [255,255,255]/255, [200,200,200]/255, 1);
+                        else
+                            xmid = 0.5*( min(S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle)) +  max(S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle)) );
+                            ymid = 0.5*( min(S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle)) +  max(S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle)) );
+                            S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle) =  S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle) - xmid + x_now;
+                            S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle) =  S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle) - ymid + y_now;
+                        end
+                    end
+                    
+                    % check collision here
+                    for i = 1:S.W.num_cars-1
+                        v_now = S.W.envCars(i+1,2); 
+                        x_now = S.W.envCars(i+1,1) + v_now * S.t_now;
+                        y_now = S.W.envCars(i+1,3);
+                        obs = [-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+[x_now; y_now];
+                        if ~collision 
+                            [bla,~] = polyxpoly(footprint(1,:),footprint(2,:),obs(1,:),obs(2,:));
+                            if ~isempty(bla)
+                                collision = 1;
+                            end
+                        end
+                    end
+
+                    if xy_now(1)+200 <= 1030
+                        xlim([xy_now(1)-10, xy_now(1)+200]);
+                    else
+                        xlim([1030-210,1030]);
+                    end
+    %                 xlim([90 280]);
+                    
+                    ylim([-5, 12]);
+                    title("Speed="+num2str(state_now(4),'%.1f')+" [m/s]");
+                    S.t_now = S.t_now + S.video_dt_multiplier * S.video_dt;
+                    if S.save_video
+                        frame = getframe(gcf);
+                        writeVideo(S.videoObj, frame);
+                    end
+                    pause(S.video_dt_multiplier * S.video_dt)
+                end
+            end
+
+
             S.wp_hist{end+1} = wp;
-            agent_info = S.AH.get_agent_info() ;
             agent_info.replace_distance = replace_distance;
             Observation =[]; %S.W.get_ob(agent_info);
             Reward = 0;%S.W.getRew(agent_info,Observation);
-            S.plot();% this updates W.O_seen, which collision check needs
-            collision = S.W.collision_check(agent_info);
+
             if collision
-                S.plot();
                 warning("A collision Happened!");
             end
             goal_check = S.W.goal_check(agent_info);
+            
             IsDone = S.determine_isDone_flag(collision,action_replaced,stuck,goal_check);
             
             if S.eval &&( IsDone == 1 || IsDone == 3 ||IsDone == 4 || IsDone == 5) && S.save_result
-                Filename = sprintf('sim_summary_IsDone_%s-%s.mat', [num2str(IsDone) strcat(num2str(S.epscur),"_",datestr(now,'HH-MM-SS.FFF'))]);
+                Filename = sprintf('REFINE_IsDone_%s-SimID_%s.mat', num2str(IsDone), num2str(S.epscur));
                 ref_Z = S.AH.ref_Z;
                 proposed_ref_Z = S.AH.proposed_ref_Z;
                 T= S.AH.T;
@@ -66,9 +167,8 @@ classdef rlsimulator < handle
                 hist_info.state_hist = S.AH.state_hist;
                 hist_info.time_hist = S.AH.time_hist;
                 hist_info.wp_hist = S.wp_hist;
-                hist_info.solve_time_hist = S.AH.solve_time_hist;  
+                hist_info.solve_time_hist = S.AH.solve_time_hist;                
                 save(Filename,'hist_info','agent_info','world_info','ref_Z','proposed_ref_Z','T','t_move','t_real_start_arr','t_proposed_start_arr','envCars')
-%                 save(Filename,'hist_info','agent_info','world_info','ref_Z','proposed_ref_Z','plotting_param','T','t_move','t_real_start_arr','t_proposed_start_arr','envCars')
             end
             
             drawnow;
@@ -97,7 +197,7 @@ classdef rlsimulator < handle
                 S.AH.reset(flags);
             end
             iniOb =[];
-            S.plot();
+%             S.plot();
         end
         
         %% helper functions
@@ -105,21 +205,37 @@ classdef rlsimulator < handle
             if S.plot_sim_flag
                 figure(S.fig_num) ;
                 cla ; hold on ; axis equal ;
-                S.W.plot(S.AH.A.get_agent_info);
+
+                % plot road
+                if ~check_if_plot_is_available(S.W,'road_lanes')
+                    road_lanes ={};
+                    w= 2;
+                    road_lanes{1} =  fill([-S.W.start_line S.W.goal(1)+500 S.W.goal(1)+500 -S.W.start_line -S.W.start_line],[-0.7 -0.7 3*S.W.lanewidth+0.7 3*S.W.lanewidth+0.7 -0.7]-0.5*S.W.lanewidth,[190,190,190]/256); % JL_plot: road 
+                    road_lanes{2} =  plot([-S.W.start_line,S.W.goal(1)+500],[3*S.W.lanewidth, 3*S.W.lanewidth]-0.5*S.W.lanewidth,'LineWidth',w,'Color',[255, 255, 255]/255);
+                    road_lanes{3} =  plot([-S.W.start_line,S.W.goal(1)+500],[2*S.W.lanewidth, 2*S.W.lanewidth]-0.5*S.W.lanewidth,'--','LineWidth',w,'Color',[1 1 1]);
+                    road_lanes{4} =  plot([-S.W.start_line,S.W.goal(1)+500],[S.W.lanewidth, S.W.lanewidth]-0.5*S.W.lanewidth,'--','LineWidth',w,'Color',[1 1 1]);
+                    road_lanes{5} =  plot([-S.W.start_line,S.W.goal(1)+500],[0, 0]-0.5*S.W.lanewidth,'LineWidth',w,'Color',[255, 255, 255]/255);
+                    S.W.plot_data.road_lanes = road_lanes;
+                end
+
+%                 goal_pos = make_box(S.W.goal_radius*2);
+%                 patch(goal_pos(1,:)+S.W.goal(1),goal_pos(2,:)+S.W.goal(2),[1 0 0]) ;
+                S.AH.plot_FRS(); 
+                if ~S.plot_fancy_vehicle
+                    S.W.plot(S.AH.A.get_agent_info); % JL_plot: obstacle vehicles are plotted here. Modify S.W.plot_data.obstacles_seen.XData and YData to change vehicle's location once S.plot finishes its execution. 
+                                                     % NOTE: this is not actual obstacle plotting! it's just a place holder    
+                    S.AH.plot_A(); % plot ego vehicle    
+                end
                 
                 xlabel('x [m]');
                 ylabel('y [m]');
                 set(gca,'FontSize',15)
                 if  S.plot_AH_flag
-                    S.AH.plot()
                     if S.plot_adjust_flag
                         S.AH.plot_adjust()
                     end
                 end
-                S.AH.plot_A();
-                S.AH.HLP.plot();
-                xlim([S.AH.A.state(1,end)-10 S.AH.A.state(1,end)+100]);
-                
+%                 xlim([S.AH.A.state(1,end)-10 S.AH.A.state(1,end)+100]);
             end
 
             

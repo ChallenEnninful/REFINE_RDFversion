@@ -305,6 +305,12 @@ classdef highwayAgentHelper_timed < agentHelper
                 end
 
                 FRS = FRS{indices(1),indices(2)};
+                AH.FRS_plot_struct.k = k;
+                AH.FRS_plot_struct.type_manu = type_manu;
+                AH.FRS_plot_struct.FRS = FRS;
+                AH.FRS_plot_struct.mirror_flag = mirror_flag;
+                AH.FRS_plot_struct.agent_state = agent_state;
+                AH.FRS_plot_struct.multiplier = multiplier;
 
                 %get waypoint data in local frame to provide for SDF cost
                 %function computation
@@ -391,6 +397,17 @@ classdef highwayAgentHelper_timed < agentHelper
             tout = 0; % place holder
         end
         
+
+        function plot_FRS(AH)
+            k = AH.FRS_plot_struct.k;
+            type_manu = AH.FRS_plot_struct.type_manu;
+            FRS = AH.FRS_plot_struct.FRS;
+            mirror_flag = AH.FRS_plot_struct.mirror_flag;
+            agent_state = AH.FRS_plot_struct.agent_state;
+            multiplier = AH.FRS_plot_struct.multiplier;
+            AH.plot_selected_parameter_FRS(k,type_manu,FRS,mirror_flag,agent_state,multiplier);
+        end
+
         function plot_selected_parameter_FRS(AH,K,type_manu,FRS,mirror_flag,agent_state,multiplier)
             if ~isempty(K)
                 %clear data and then plot
