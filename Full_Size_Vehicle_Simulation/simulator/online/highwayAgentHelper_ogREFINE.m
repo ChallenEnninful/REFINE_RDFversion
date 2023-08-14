@@ -1,4 +1,4 @@
-classdef highwayAgentHelper_timed < agentHelper
+classdef highwayAgentHelper < agentHelper
     %% properties
     properties
         HLP;
@@ -34,21 +34,10 @@ classdef highwayAgentHelper_timed < agentHelper
         %Challen added for Jon
         SDF_trial_FRSdata = struct;
 
-        FRS_plot_struct = struct;
-        FRS_u0_p_maps = struct;
-        FRS_spd = struct;
-        FRS_dir = struct;
-        FRS_lan = struct;
-
-        %structures for replay mode
-        replay_mode = 0;
-        trial_replay_hist = {}
-        K_idx = 1;
-
     end
     %% methods
     methods
-        function AH = highwayAgentHelper_timed(A,FRS_obj,HLP,varargin)
+        function AH = highwayAgentHelper(A,FRS_obj,HLP,varargin)
             AH@agentHelper(A,FRS_obj,varargin{:});
             AH.HLP = HLP;
             info_file_dir = load('dir_change_Ay_info.mat');
@@ -81,7 +70,7 @@ classdef highwayAgentHelper_timed < agentHelper
             %FOR JON, do local frame transformation of obstacles in order
             %to output vertices for Qingyi
             dyn_obs_local = dyn_obs_mex;
-            world_to_local(agent_state_mex(1:3), dyn_obs_mex(1:3,:));
+            world_to_local(agent_state_mex(1:3), dyn_obs_mex(1:3,:))
             dyn_obs_local(1:3,:) = world_to_local(agent_state_mex(1:3), dyn_obs_mex(1:3,:));
 
             %% ####################### NEW GENERATOR METHOD FOR QINGYI
@@ -89,9 +78,9 @@ classdef highwayAgentHelper_timed < agentHelper
                 %loop over FRS's to output the corresponding obstacle
                 %generators in local frame
 
-            obs_zono = zeros(length(dyn_obs_local),4,2);
-            obs_zono_mirr = zeros(length(dyn_obs_local),4,2);
-            v = 25; %max obstacle velocity  
+                obs_zono = zeros(length(dyn_obs_local),4,2);
+                obs_zono_mirr = zeros(length(dyn_obs_local),4,2);
+                v = 25; %max obstacle velocity  
 
 
                 for jj = 1:length(dyn_obs_local)
@@ -130,239 +119,85 @@ classdef highwayAgentHelper_timed < agentHelper
                     obs_zono_mirr(jj,:,:) = obs_zono_mirr_jj;
                     
                 end
-
-               %% ######################## Timing of constraints and gradients evaluation
-
-                u0_FRS_ranges = AH.FRS_u0_p_maps.u0map;
-                urange_diff = abs(u0_FRS_ranges - agent_state(4));
-    %             [~,idxu0_minpot] = min(urange_diff);
-                [~,idxmin]  = min(sum(urange_diff,2));
-                idxu0 = min(idxmin);
-    
-    %             idxu0_z = [];
-    %             for kk = 1:length(u0_FRS_ranges)
-    %                 if agent_state(4) >= u0_FRS_ranges(kk,1) && agent_state(4) <= u0_FRS_ranges(kk,2)
-    %                     idxu0_z = [idxu0_z,kk];
-    %                 end
-    %             end
-    %             idxu0 = min(idxu0_minpot);
-    
-    
-                spd_FRS_ranges = AH.FRS_u0_p_maps.pmap(idxu0).spd;
-                lan_FRS_ranges = AH.FRS_u0_p_maps.pmap(idxu0).lan;
-                dir_FRS_ranges = AH.FRS_u0_p_maps.pmap(idxu0).dir;
-    
-                min_spd_au = 0; %min speed that the vehicle can change speed to in each maneuver
-                max_spd_au = agent_state_mex(4) + 4; %max speed that the vehicle can speed up to in each maneuver
-                bin_indices_i = [];
-                bin_indices_j = [];
-                FRS_types = [];
-                obstacles_are_mirrored = [];
-                way_point = [];
-                spd_FRS_range_feas = [];
-    
-                for ii = 1:3
-                    if ii ==1
-    
-                        for i = 1:length(spd_FRS_ranges)
-                            center_p = mean(spd_FRS_ranges(i,:));
-                            if center_p >= min_spd_au && center_p <= max_spd_au
-                                bin_indices_i = [bin_indices_i,idxu0-1];
-                                bin_indices_j = [bin_indices_j,i-1];
-                                FRS_types = [FRS_types,ii-1];
-                                obstacles_are_mirrored = [obstacles_are_mirrored,0];
-                                spd_FRS_range_feas = [spd_FRS_range_feas; spd_FRS_ranges(i,:)];
-                            
-                            end
-    
-                        end
-    
-                    elseif ii == 2
-    
-                        %Don't look at direction changes if they are outside the linear regime (<= 7.0m/s)
-                        if u0_FRS_ranges(idxu0,1) > 7 
-                            for i = 1:length(dir_FRS_ranges)
-                                %add double the number of indices to account
-                                %for mirrored FRSes
-                                bin_indices_i = [bin_indices_i,idxu0-1,idxu0-1];
-                                bin_indices_j = [bin_indices_j,i-1,i-1];
-                                FRS_types = [FRS_types,ii-1,ii-1];
-                                obstacles_are_mirrored = [obstacles_are_mirrored,0,1]; 
-                                
-                            end
-    
-                        end
-                     
-                    elseif ii == 3
-    
-                        %Don't look at lane changes if they are outside the linear regime (<= 7.0m/s)
-                        if u0_FRS_ranges(idxu0,1) > 7 
-                            for i = 1:length(lan_FRS_ranges)
-                                %add double the number of indices to account
-                                %for mirrored FRSes
-                                bin_indices_i = [bin_indices_i,idxu0-1,idxu0-1];
-                                bin_indices_j = [bin_indices_j,i-1,i-1];
-                                FRS_types = [FRS_types,ii-1,ii-1];
-                                obstacles_are_mirrored = [obstacles_are_mirrored,0,1]; 
-                                
-                            end
-    
-                        end
-                    end
-    
-                end
-    
-    
-                %% Call New function to run constraint evaluation time test
-                %comment out during normal operation
-
-%                 num_k = 10; %number of k values you want to evaluate
-%                 tic
-%                 times = time_cons_eval(AH,agent_state_mex, x_des_mex, dyn_obs_mex,...
-%                         spd_FRS_ranges,lan_FRS_ranges,dir_FRS_ranges,...
-%                         FRS_types,bin_indices_j,obstacles_are_mirrored,num_k);
-% 
-%                 toc
-
-
-
-
-
-
-
-
 %% ###########Continue optimization
+            %continue with original code and run C++ optimization
+            tic
+            k_mex = TEST_MEX(agent_state_mex, x_des_mex, dyn_obs_mex);
             
-            if AH.replay_mode
-                
-                if AH.K_idx > length(AH.trial_replay_hist.K_hist)
-                    k_mex = [0;0;1;-1];
-                    K = [];
-                    return
-                end
+            t_temp = toc;
+            AH.solve_time_hist = [AH.solve_time_hist, t_temp];
+            indices = k_mex(5:6)+1;
+            k_mex = k_mex(1:4);
+            K = k_mex;
+            if K(end) == -1
+                K = [];
+            else % visualize FRS and update for the agent
+                type_manu = K(4);
+                multiplier = 1;
+                mirror_flag = 0;
 
-                %%k_mex is [k_speedchange;k_lanechange;0;manu_type;FRS_idx1;FRS_idx2];
-                k_mex = zeros(6,1);
-                k_val = AH.trial_replay_hist.K_hist(AH.K_idx);
-                type_manu = AH.trial_replay_hist.type_manu_hist(AH.K_idx);
-                mirror_flag = AH.trial_replay_hist.mirror_hist(AH.K_idx);
-                multiplier = -2*mirror_flag + 1; %want multiplier to be negative if mirrored and positive if not
-                FRS = AH.trial_replay_hist.FRS_hist{1,AH.K_idx};
-
-                if type_manu == 1
-                    k_mex(1) = k_val;
-                    AH.prev_action = -1; 
-                    AH.cur_t0_idx = 1;
-                    
-                else
-                    k_mex(1) = AH.trial_replay_hist.state_hist(4,AH.K_idx);
-                    k_mex(2) = k_val;
-                    AH.prev_action = type_manu;
-                    AH.cur_t0_idx = 2;
-                    AH.saved_K = k_mex;
-                end
-                k_mex(4) = type_manu;
-                k_mex(3) = 1;
-                K = k_mex(1:4);
-                k = k_val;
                 type_manu_all = ["Au","dir","lan"];
                 type_text = type_manu_all(type_manu);
                 [~,idxu0] = min(abs(AH.u0_array - agent_state(4)));
-                indices = [];
-                AH.K_idx = AH.K_idx+1;
-                
-            else
+                M = AH.zono_full.M_mega{idxu0};
 
-                %continue with original code and run C++ optimization
-                tic
-                k_mex = TEST_MEX(agent_state_mex, x_des_mex, dyn_obs_mex);
-                t_temp = toc;
-    
-    
-                AH.solve_time_hist = [AH.solve_time_hist, t_temp];
-                indices = k_mex(5:6)+1;
-                k_mex = k_mex(1:4);
-                K = k_mex;
-                if K(end) == -1
-                    K = [];
-                    return
-                else % visualize FRS and update for the agent
-                    type_manu = K(4);
-                    multiplier = 1;
-                    mirror_flag = 0;
-    
-                    type_manu_all = ["Au","dir","lan"];
-                    type_text = type_manu_all(type_manu);
-                    [~,idxu0] = min(abs(AH.u0_array - agent_state(4)));
-                    M = AH.zono_full.M_mega{idxu0};
-    
-                    %% test block to compute max time interval in FRS set
-    %                 dt_max  = 0;
-    %                 for idx = 1: length(AH.zono_full.M_mega)
-    %                     M = AH.zono_full.M_mega{idx};
-    %                     for i = 1:3
-    %                         type_text = type_manu_all(i);
-    %                         FRS = M(type_text);
-    %                         for jj = 1:2
-    %                             try 
-    %                                 FRS = FRS{jj,1};
-    %                                 if isempty(FRS)
-    %                                     continue
-    %                                 end
-    %                             catch
-    %                                 continue
-    %                             end
-    %                             dstack = zeros(length(FRS.vehRS_save),1);
-    %                             dstack2 = zeros(length(FRS.vehRS_save),1);
-    %                             parfor ii=1:length(FRS.vehRS_save)
-    %                                 Zi = interval(FRS.vehRS_save{1,ii}) %generate interval representation of zonotope
-    %                                 dstack(ii,1) = infimum(Zi(20)); %20th index corresponds to the interval representation for the time center and generators
-    %                                 dstack2(ii,1) = supremum(Zi(20));
-    %                             end
-    %             
-    %                             interval_size = dstack2 - dstack;
-    %                             dt = max(interval_size);
-    %                             if dt > dt_max
-    %                                 dt_max = dt;
-    %                             end
-    %                         end
-    % 
-    %                     end
-    % 
-    %                 end
-    
-                    %%
-                    if type_manu == 1
-                        k = K(1);
-                        FRS = M(type_text);
-                        AH.prev_action = -1; 
-                        AH.cur_t0_idx = 1;
-                    else
-                        k = K(2);
-                        if k<0
-                            multiplier = -1;
-                            mirror_flag = 1;
-                        end
-                        FRS = M(type_text); 
-                        AH.prev_action = type_manu;
-                        AH.cur_t0_idx = 2;
-                        AH.saved_K = K;
-                    end
-                    if size(FRS,1) == 1
-                        FRS = FRS';
-                    end
-    
-                    FRS = FRS{indices(1),indices(2)};
+                %% test block to compute max time interval in FRS set
+%                 dt_max  = 0;
+%                 for idx = 1: length(AH.zono_full.M_mega)
+%                     M = AH.zono_full.M_mega{idx};
+%                     for i = 1:3
+%                         type_text = type_manu_all(i);
+%                         FRS = M(type_text);
+%                         for jj = 1:2
+%                             try 
+%                                 FRS = FRS{jj,1};
+%                                 if isempty(FRS)
+%                                     continue
+%                                 end
+%                             catch
+%                                 continue
+%                             end
+%                             dstack = zeros(length(FRS.vehRS_save),1);
+%                             dstack2 = zeros(length(FRS.vehRS_save),1);
+%                             parfor ii=1:length(FRS.vehRS_save)
+%                                 Zi = interval(FRS.vehRS_save{1,ii}) %generate interval representation of zonotope
+%                                 dstack(ii,1) = infimum(Zi(20)); %20th index corresponds to the interval representation for the time center and generators
+%                                 dstack2(ii,1) = supremum(Zi(20));
+%                             end
+%             
+%                             interval_size = dstack2 - dstack;
+%                             dt = max(interval_size);
+%                             if dt > dt_max
+%                                 dt_max = dt;
+%                             end
+%                         end
+% 
+%                     end
+% 
+%                 end
 
+                %%
+                if type_manu == 1
+                    k = K(1);
+                    FRS = M(type_text);
+                    AH.prev_action = -1; 
+                    AH.cur_t0_idx = 1;
+                else
+                    k = K(2);
+                    if k<0
+                        multiplier = -1;
+                        mirror_flag = 1;
+                    end
+                    FRS = M(type_text); 
+                    AH.prev_action = type_manu;
+                    AH.cur_t0_idx = 2;
+                    AH.saved_K = K;
                 end
-            end
-                
-                AH.FRS_plot_struct.k = k;
-                AH.FRS_plot_struct.type_manu = type_manu;
-                AH.FRS_plot_struct.FRS = FRS;
-                AH.FRS_plot_struct.mirror_flag = mirror_flag;
-                AH.FRS_plot_struct.agent_state = agent_state;
-                AH.FRS_plot_struct.multiplier = multiplier;
+                if size(FRS,1) == 1
+                    FRS = FRS';
+                end
+
+                FRS = FRS{indices(1),indices(2)};
 
                 %get waypoint data in local frame to provide for SDF cost
                 %function computation
@@ -445,21 +280,10 @@ classdef highwayAgentHelper_timed < agentHelper
                 AH.type_manu_hist = [AH.type_manu_hist type_manu];
                 AH.state_hist = [AH.state_hist agent_state];
                 AH.time_hist = [AH.time_hist AH.A.time(end)];
-            
+            end
             tout = 0; % place holder
         end
         
-
-        function plot_FRS(AH)
-            k = AH.FRS_plot_struct.k;
-            type_manu = AH.FRS_plot_struct.type_manu;
-            FRS = AH.FRS_plot_struct.FRS;
-            mirror_flag = AH.FRS_plot_struct.mirror_flag;
-            agent_state = AH.FRS_plot_struct.agent_state;
-            multiplier = AH.FRS_plot_struct.multiplier;
-            AH.plot_selected_parameter_FRS(k,type_manu,FRS,mirror_flag,agent_state,multiplier);
-        end
-
         function plot_selected_parameter_FRS(AH,K,type_manu,FRS,mirror_flag,agent_state,multiplier)
             if ~isempty(K)
                 %clear data and then plot
@@ -468,7 +292,7 @@ classdef highwayAgentHelper_timed < agentHelper
                 if type_manu == 1 % 1: speed change. 2: direction change. 3: lane change
                     AH.plot_zono_collide_sliced(FRS,mirror_flag,agent_state,[K; 0],[0 0 1],2);
                 else
-                    AH.plot_zono_collide_sliced(FRS,mirror_flag,agent_state,[agent_state(4);K*multiplier],[0 1 0],2);
+                    AH.plot_zono_collide_sliced(FRS,mirror_flag,agent_state,[agent_state(4);K *multiplier],[0 1 0],2);
                 end
             end
         end
