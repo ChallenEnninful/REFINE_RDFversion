@@ -9,10 +9,10 @@ else
     disp('table already loaded') ;
 end
 
-
-plot_sim_flag = 1;
+visualize = 0; %need to turn off to stop visualization
+plot_sim_flag = visualize; %if visualize is on plot_sim_flag should also be on
 plot_AH_flag = 1;
-save_result = true; % make it true if you want to save the simulation data
+save_result = false; % make it true if you want to save the simulation data
 save_video = false; %make it true if you want to save videos of the trials
 
 
@@ -33,7 +33,7 @@ hlp_lookahead = 90;
 lane_changeFRS_log = {};
 
 
-for j = 49:1000 
+for j = 1:1000 
     % RESET simulation environment
     World = dynamic_car_world( 'bounds', bounds, ...
         'buffer', world_buffer, 'goal', [1010;3.7], ...
@@ -50,7 +50,7 @@ for j = 49:1000
         'verbose',verbose_level); % takes care of online planning
     AgentHelper.FRS_u0_p_maps = load("u0_p_maps.mat");
     Simulator = rlsimulator(AgentHelper,World,'plot_sim_flag',plot_sim_flag,'plot_AH_flag',plot_AH_flag,'save_result',save_result,...
-        'save_video',save_video,'epscur',j);
+        'save_video',save_video,'epscur',j,'visualize',visualize);
 
     AgentHelper.S = Simulator;
     Simulator.eval = 1; %turn on evaluation so summary will be saved
