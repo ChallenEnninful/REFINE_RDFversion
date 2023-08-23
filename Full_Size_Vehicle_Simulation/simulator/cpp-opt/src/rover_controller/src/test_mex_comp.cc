@@ -220,6 +220,7 @@ SimParam GenerateSimParameter(
   std::atomic<int> next_idx = 0;
   const int num_search = static_cast<int>(frses_to_search.size());
   const int num_apps = 13;
+  double max_planning_time_allowed = 0.25; // QC
 
   //DEL WGUARD_ROS_INFO("APP INIT");
   // std::cout << "APP INIT" << std::endl;
@@ -318,10 +319,14 @@ SimParam GenerateSimParameter(
       auto sliced = frs_to_use.SliceAt(fp_state.u_, v_to_use, r_to_use);
       const auto cons = GenerateConstraints(sliced, obs_info_to_use);
       const auto JL_t3 = Tick();
-      double setup_time = GetDeltaS(JL_t3, JL_t1); // QC
-      app->Options()->SetNumericValue("max_wall_time", (0.35 - setup_time) / ((double)num_outer));
 
+      // QC
+      double setup_time = GetDeltaS(JL_t3, JL_t1); 
+      double max_ipopt_time = (max_planning_time_allowed - setup_time) / ((double)num_outer); 
+      app->Options()->SetNumericValue("max_wall_time", max_ipopt_time);
       setup_times.at(total_idx) = setup_time;
+      // QC
+
       // std::cout << "Constraint Generation Time: " << GetDeltaS(JL_t3, JL_t2) << std::endl;
       std::shared_ptr<Ipopt::Number[]> a_mat = cons.a_con_arr_;
       std::shared_ptr<Ipopt::Number[]> b_mat = cons.b_con_arr_;
@@ -332,12 +337,13 @@ SimParam GenerateSimParameter(
       Ipopt::SmartPtr<Ipopt::TNLP> mynlp =
           new fl_zono_ipopt_problem::FlZonoIpoptProblem(
               a_mat, b_mat, cost_fcn_info, cons.zono_startpoints_,
-              cons.zono_obs_sizes_, k_rng, curr_manu_type);
+              cons.zono_obs_sizes_, k_rng, curr_manu_type, max_ipopt_time);
 
       const auto ipopt_t1 = Tick();
       const Ipopt::ApplicationReturnStatus status = app->OptimizeTNLP(mynlp);
       const auto ipopt_t2 = Tick();
-      ipopt_times.at(total_idx) = GetDeltaS(ipopt_t2, ipopt_t1); // QC
+      double actual_ipopt_time = GetDeltaS(ipopt_t2, ipopt_t1);
+      ipopt_times.at(total_idx) =  actual_ipopt_time;// QC
       const bool ipopt_success = status == Ipopt::Solve_Succeeded or
                                  status == Ipopt::Solved_To_Acceptable_Level;
       const auto* mnlp =
@@ -348,6 +354,7 @@ SimParam GenerateSimParameter(
       if (ipopt_success or was_really_feasible) {
         // Retrieve some statistics about the solve
         ++successful_runs;
+        ipopt_success = ipopt_success and (actual_ipopt_time <= max_ipopt_time); // QC
         const Ipopt::Number final_obj =
             ipopt_success ? (app->Statistics()->FinalObjective())
                           : mnlp->GetFeasibleCost();
@@ -400,8 +407,8 @@ SimParam GenerateSimParameter(
     }
   }
   const auto gen_param_end_time = Tick();
-  std::cout << "Time: " << GetDeltaS(gen_param_end_time, gen_param_start_time)
-            << std::endl;
+  double total_time = GetDeltaS(gen_param_end_time, gen_param_start_time);
+  std::cout << "Time: " << total_time << std::endl;
   for (unsigned int i = 0; i < num_search; i++) {
     std::cout << "Ipopt " << ipopt_return_status.at(i) << " " << num_cost_calls.at(i) << " " << num_gradient_calls.at(i)
       << " " << num_constraint_calls.at(i) << " " << num_jacobian_calls.at(i)
