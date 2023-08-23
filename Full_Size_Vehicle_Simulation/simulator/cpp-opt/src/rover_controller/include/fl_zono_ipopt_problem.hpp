@@ -16,11 +16,7 @@
 /// optimization
 
 namespace roahm {
-// QC
-namespace {
-  inline auto Tick() { return std::chrono::high_resolution_clock::now(); }
-}
-// QC
+
 namespace fl_zono_ipopt_problem {
 using namespace Ipopt;
 /// The IPOPT NLP problem definition, where the optimization actually runs
@@ -56,7 +52,7 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
   /// Previously computed hessian of the lagrangian
   double hess_k_;
   // QC: 
-  double ipopt_start_; // Used to track when the problem starts
+  std::chrono::time_point<std::chrono::high_resolution_clock> ipopt_start_; // Used to track when the problem starts
   double max_planning_time_allowed_; // Used to limit Ipopt max wall time
   // QC
 
@@ -132,7 +128,7 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
         manu_type_{manu_type},
         max_planning_time_allowed_{max_planning_time_allowed} {
     min_indices_.resize(zono_startpoints_.size());
-    ipopt_start_ = Tick();
+    ipopt_start_ = std::chrono::high_resolution_clock::now();
   }
 
 	double ComputeDeltaY(double k) const {
