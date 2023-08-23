@@ -322,7 +322,7 @@ SimParam GenerateSimParameter(
 
       // QC
       double setup_time = GetDeltaS(JL_t3, JL_t1); 
-      double max_ipopt_time = (max_planning_time_allowed - setup_time) / ((double)num_outer); 
+      double max_ipopt_time = max_planning_time_allowed / ((double)num_outer) - setup_time; 
       app->Options()->SetNumericValue("max_wall_time", max_ipopt_time);
       setup_times.at(total_idx) = setup_time;
       // QC
