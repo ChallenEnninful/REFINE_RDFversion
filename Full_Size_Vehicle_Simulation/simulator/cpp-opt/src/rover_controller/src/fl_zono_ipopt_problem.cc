@@ -166,6 +166,8 @@ bool FlZonoIpoptProblem::eval_g(Index n, const Number* x, bool new_x, Index m,
   this->num_constraint_calls++;
   // QC: Add counter for IPOPT evaluations
   double max_of_all_constraints = ComputeConstraint(x, m, g);
+  double curr_time = Tick();
+  double ipopt_elapsed_time = GetDeltaS(curr_time, ipopt_start_)
 
   // std::cout << "CONSTRAINT EVAL" << std::endl;
   // std::cout << "n:" << n << std::endl;
@@ -175,7 +177,7 @@ bool FlZonoIpoptProblem::eval_g(Index n, const Number* x, bool new_x, Index m,
   // std::cout << "g:" << g << std::endl;
 
   // Keep track of the lowest cost parameter that has been feasible
-  if (max_of_all_constraints <= 0.0) {
+  if (max_of_all_constraints <= 0.0 and ipopt_elapsed_time <= max_planning_time_allowed_) {
     const auto curr_cost = ComputeCostAndDerivs(x[0]).cost_k_;
     if ((not feasible_found_) or (curr_cost < prev_min_cost_)) {
       // If we haven't previously found a feasible solution, or this is the
