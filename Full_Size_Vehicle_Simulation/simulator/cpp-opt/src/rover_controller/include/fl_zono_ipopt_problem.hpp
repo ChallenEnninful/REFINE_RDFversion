@@ -101,11 +101,12 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
   /// \param zono_obs_sizes the number of rows in each individual constraint
   /// \param k_rng the sliceable "radius" for the decision variable about the
   /// center point
+  /// \param max_planning_time_allowed the maximum time ipopt is allowed to solve the problem
   FlZonoIpoptProblem(MatPtr a_mat, MatPtr b_mat,
                      roahm::CostFcnInfo cost_fcn_info,
                      std::vector<IndexT> zono_startpoints,
                      std::vector<IndexT> zono_obs_sizes, double k_rng,
-                     ManuType manu_type, double max_planning_time_allowed)
+                     ManuType manu_type, double max_planning_time_allowed=9.0)
       : a_mat_{a_mat},
         b_mat_{b_mat},
         min_indices_{},
