@@ -344,8 +344,9 @@ SimParam GenerateSimParameter(
       const auto ipopt_t2 = Tick();
       double actual_ipopt_time = GetDeltaS(ipopt_t2, ipopt_t1);
       ipopt_times.at(total_idx) =  actual_ipopt_time;// QC
-      const bool ipopt_success = status == Ipopt::Solve_Succeeded or
-                                 status == Ipopt::Solved_To_Acceptable_Level;
+      const bool ipopt_success = (status == Ipopt::Solve_Succeeded or
+                                status == Ipopt::Solved_To_Acceptable_Level) and 
+                                (actual_ipopt_time <= max_ipopt_time); // QC
       const auto* mnlp =
           dynamic_cast<fl_zono_ipopt_problem::FlZonoIpoptProblem*>(
               GetRawPtr(mynlp));
@@ -354,7 +355,6 @@ SimParam GenerateSimParameter(
       if (ipopt_success or was_really_feasible) {
         // Retrieve some statistics about the solve
         ++successful_runs;
-        ipopt_success = ipopt_success and (actual_ipopt_time <= max_ipopt_time); // QC
         const Ipopt::Number final_obj =
             ipopt_success ? (app->Statistics()->FinalObjective())
                           : mnlp->GetFeasibleCost();
