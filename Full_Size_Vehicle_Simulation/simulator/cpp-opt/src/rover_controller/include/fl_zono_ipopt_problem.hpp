@@ -16,6 +16,11 @@
 /// optimization
 
 namespace roahm {
+// QC
+namespace {
+  inline auto Tick() { return std::chrono::high_resolution_clock::now(); }
+}
+// QC
 namespace fl_zono_ipopt_problem {
 using namespace Ipopt;
 /// The IPOPT NLP problem definition, where the optimization actually runs
