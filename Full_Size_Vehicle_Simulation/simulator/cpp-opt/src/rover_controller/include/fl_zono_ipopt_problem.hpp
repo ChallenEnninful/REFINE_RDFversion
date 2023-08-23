@@ -11,6 +11,7 @@
 #include "IpTypes.hpp"     // for Index, Number, Ipopt
 #include "common.hpp"      // for IndexT
 #include "cost_fcn.hpp"    // for CostFcnInfo, CostFcnInfo::CostAndDerivs
+#include <chrono>
 
 /// @file fl_zono_ipopt_problem.hpp Contains the IPOPT NLP to run the
 /// optimization
