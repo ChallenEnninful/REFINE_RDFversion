@@ -177,7 +177,7 @@ std::vector<Ipopt::SmartPtr<Ipopt::IpoptApplication>> GetIpApps(int num_apps) {
     opts->SetNumericValue("ma57_pre_alloc", 5.0);
     opts->SetIntegerValue("print_level", 0);
     // opts->SetIntegerValue("max_iter", 15); 
-    opts->SetNumericValue("max_wall_time", 0.25 / 3.0);
+    // opts->SetNumericValue("max_wall_time", 0.15 / 3.0);
     opts->SetIntegerValue("acceptable_iter", 15);     // def 15
     opts->SetNumericValue("acceptable_tol", 1.0e-3);  // def 1.0e-6
     opts->SetStringValue("print_timing_statistics", "no");
@@ -314,13 +314,14 @@ SimParam GenerateSimParameter(
       const auto cost_fcn_info = GenCostFcn(
           frs_to_use, zono_desired_idx, fp_state.u_, v_to_use, r_to_use,
           x_des_to_use.x_, x_des_to_use.y_, x_des_to_use.h_);
-      const auto JL_t2 = Tick();
       // std::cout << "Cost Generation Time: " << GetDeltaS(JL_t2, JL_t1) << std::endl;
       auto sliced = frs_to_use.SliceAt(fp_state.u_, v_to_use, r_to_use);
       const auto cons = GenerateConstraints(sliced, obs_info_to_use);
       const auto JL_t3 = Tick();
+      double setup_time = GetDeltaS(JL_t3, JL_t1); // QC
+      app->Options()->SetNumericValue("max_wall_time", (0.35 - setup_time) / ((double)num_outer));
 
-      setup_times.at(total_idx) = GetDeltaS(JL_t3, JL_t1); // QC
+      setup_times.at(total_idx) = setup_time;
       // std::cout << "Constraint Generation Time: " << GetDeltaS(JL_t3, JL_t2) << std::endl;
       std::shared_ptr<Ipopt::Number[]> a_mat = cons.a_con_arr_;
       std::shared_ptr<Ipopt::Number[]> b_mat = cons.b_con_arr_;
