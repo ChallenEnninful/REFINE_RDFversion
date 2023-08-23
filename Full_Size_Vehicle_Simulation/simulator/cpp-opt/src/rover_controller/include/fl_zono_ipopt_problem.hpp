@@ -50,6 +50,10 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
   double jac_k_;
   /// Previously computed hessian of the lagrangian
   double hess_k_;
+  // QC: 
+  double ipopt_start_; // Used to track when the problem starts
+  double max_planning_time_allowed_; // Used to limit Ipopt max wall time
+  // QC
 
   // JL: add safeguard to make sure eval_f and eval_grad_f use the same k
   /// Parameter value used at the last time the cost was recomputed
@@ -101,7 +105,7 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
                      roahm::CostFcnInfo cost_fcn_info,
                      std::vector<IndexT> zono_startpoints,
                      std::vector<IndexT> zono_obs_sizes, double k_rng,
-                     ManuType manu_type)
+                     ManuType manu_type, double max_planning_time_allowed)
       : a_mat_{a_mat},
         b_mat_{b_mat},
         min_indices_{},
@@ -119,8 +123,10 @@ class FlZonoIpoptProblem : public Ipopt::TNLP {
         feasible_found_{false},
         prev_min_cost_{std::numeric_limits<double>::infinity()},
         prev_min_k_{std::numeric_limits<double>::infinity()},
-        manu_type_{manu_type} {
+        manu_type_{manu_type},
+        max_planning_time_allowed_{max_planning_time_allowed} {
     min_indices_.resize(zono_startpoints_.size());
+    ipopt_start_ = Tick();
   }
 
 	double ComputeDeltaY(double k) const {
