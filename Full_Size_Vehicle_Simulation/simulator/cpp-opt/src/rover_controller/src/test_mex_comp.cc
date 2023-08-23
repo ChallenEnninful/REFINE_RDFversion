@@ -176,7 +176,8 @@ std::vector<Ipopt::SmartPtr<Ipopt::IpoptApplication>> GetIpApps(int num_apps) {
     opts->SetStringValue("linear_solver", "ma57");
     opts->SetNumericValue("ma57_pre_alloc", 5.0);
     opts->SetIntegerValue("print_level", 0);
-    opts->SetIntegerValue("max_iter", 15);
+    // opts->SetIntegerValue("max_iter", 15); 
+    opts->SetNumericValue("max_wall_time", 0.25 / 3.0);
     opts->SetIntegerValue("acceptable_iter", 15);     // def 15
     opts->SetNumericValue("acceptable_tol", 1.0e-3);  // def 1.0e-6
     opts->SetStringValue("print_timing_statistics", "no");
@@ -245,6 +246,9 @@ SimParam GenerateSimParameter(
   std::vector<unsigned int> num_jacobian_calls(num_search);
   std::vector<unsigned int> num_reused_gradient_calls(num_search);
   std::vector<unsigned int> num_reused_jacobian_calls(num_search);
+
+  std::vector<double> setup_times(num_search);
+  std::vector<double> ipopt_times(num_search);
   //
 
   // std::cout << "____FOR_TIMING_BEGIN" << std::endl;
@@ -315,6 +319,8 @@ SimParam GenerateSimParameter(
       auto sliced = frs_to_use.SliceAt(fp_state.u_, v_to_use, r_to_use);
       const auto cons = GenerateConstraints(sliced, obs_info_to_use);
       const auto JL_t3 = Tick();
+
+      setup_times.at(total_idx) = GetDeltaS(JL_t3, JL_t1); // QC
       // std::cout << "Constraint Generation Time: " << GetDeltaS(JL_t3, JL_t2) << std::endl;
       std::shared_ptr<Ipopt::Number[]> a_mat = cons.a_con_arr_;
       std::shared_ptr<Ipopt::Number[]> b_mat = cons.b_con_arr_;
@@ -327,7 +333,10 @@ SimParam GenerateSimParameter(
               a_mat, b_mat, cost_fcn_info, cons.zono_startpoints_,
               cons.zono_obs_sizes_, k_rng, curr_manu_type);
 
+      const auto ipopt_t1 = Tick();
       const Ipopt::ApplicationReturnStatus status = app->OptimizeTNLP(mynlp);
+      const auto ipopt_t2 = Tick();
+      ipopt_times.at(total_idx) = GetDeltaS(ipopt_t2, ipopt_t1); // QC
       const bool ipopt_success = status == Ipopt::Solve_Succeeded or
                                  status == Ipopt::Solved_To_Acceptable_Level;
       const auto* mnlp =
@@ -397,7 +406,16 @@ SimParam GenerateSimParameter(
       << " " << num_constraint_calls.at(i) << " " << num_jacobian_calls.at(i)
       << " " << num_reused_gradient_calls.at(i) << " " << num_reused_jacobian_calls.at(i) << "\n"; 
   }
-
+  std::cout << "SetupTime ";
+  for (unsigned int i = 0; i < num_search; i++) {
+    std::cout << setup_times.at(i) << " "; 
+  }
+  std::cout << "\n"; 
+  std::cout << "OptTime ";
+  for (unsigned int i = 0; i < num_search; i++) {
+    std::cout << ipopt_times.at(i) << " "; 
+  }
+  std::cout << "\n";
   
   // std::cout << "Successful: " << successful_runs << std::endl;
   // std::cout << "Failed:     " << failure_runs << std::endl;
