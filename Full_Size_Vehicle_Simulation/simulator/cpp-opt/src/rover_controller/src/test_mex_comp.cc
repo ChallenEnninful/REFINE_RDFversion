@@ -3,6 +3,11 @@
 #include <chrono>
 #include <random>
 #include <string>  // for string, alloc...
+// QC
+#include <iostream>
+#include <fstream>
+#include <filesystem>
+// QC
 
 #include "IpIpoptApplication.hpp"  // for IpoptApplication
 #include "IpReturnCodes_inc.h"     // for Solve_Succeeded
@@ -220,7 +225,7 @@ SimParam GenerateSimParameter(
   std::atomic<int> next_idx = 0;
   const int num_search = static_cast<int>(frses_to_search.size());
   const int num_apps = 13;
-  double max_planning_time_allowed = 0.25; // QC
+  double max_planning_time_allowed = 0.35; // QC
 
   //DEL WGUARD_ROS_INFO("APP INIT");
   // std::cout << "APP INIT" << std::endl;
@@ -406,6 +411,10 @@ SimParam GenerateSimParameter(
       // QC: print optimization statistics
     }
   }
+
+  std::cout.setf(std::ios::fixed);
+  std::cout.setf(std::ios::showpoint);
+  std::cout.precision(3);
   const auto gen_param_end_time = Tick();
   double total_time = GetDeltaS(gen_param_end_time, gen_param_start_time);
   std::cout << "Time: " << total_time << std::endl;
@@ -515,6 +524,54 @@ SimParam GenerateSimParameter(
   const double final_param = param_vals_mirrored.at(min_cost_idx);
   const int idx0 = frs_min_info.idx0_;
   const int idx1 = frs_min_info.idx1_;
+
+  // QC
+  // int file_index = 0;
+  // std::string filename = std::to_string(max_planning_time_allowed) + '/' + std::to_string(file_index) + ".txt";
+  // while (std::filesystem::exists(filename)) {
+  //   file_index += 1;
+  //   filename = std::to_string(max_planning_time_allowed) + '/' + std::to_string(file_index) + ".txt";
+  // }
+  // std::cout << "Writing to file:" << filename << std::endl;
+  // std::ofstream outfile;
+  // outfile.open(filename);
+  // outfile << "Time: " << total_time << std::endl;
+  // int status = was_successful ? 0 : -1;
+  // outfile << "Status: " << status << std::endl;
+  // outfile << "Cost ";
+  // for (unsigned int i = 0; i < num_search; i++) {
+  //   outfile << cost_vals.at(i) << " "; 
+  // }
+  // outfile << "\n"; 
+
+  // outfile << "Best_p: ";
+  // for (unsigned int i = 0; i < num_search; i++) {
+  //   outfile << param_vals_mirrored.at(i) << " "; 
+  // }
+  // outfile << "\n"; 
+
+  // outfile << "k: " << final_param << std::endl;;
+
+  // outfile << "SetupTime ";
+  // for (unsigned int i = 0; i < num_search; i++) {
+  //   outfile << setup_times.at(i) << " "; 
+  // }
+  // outfile << "\n"; 
+  // outfile << "OptTime ";
+  // for (unsigned int i = 0; i < num_search; i++) {
+  //   outfile << ipopt_times.at(i) << " "; 
+  // }
+  // outfile << "\n";
+  // for (unsigned int i = 0; i < num_search; i++) {
+  //   outfile << "Ipopt " << ipopt_return_status.at(i) << " " << num_cost_calls.at(i) << " " << num_gradient_calls.at(i)
+  //     << " " << num_constraint_calls.at(i) << " " << num_jacobian_calls.at(i)
+  //     << " " << num_reused_gradient_calls.at(i) << " " << num_reused_jacobian_calls.at(i) << "\n"; 
+  // }
+  // outfile << "\n";
+  // outfile.close();
+  // QC
+
+
   return {was_successful, final_param, final_manu_type, idx0, idx1};
 }
 }  // namespace roahm

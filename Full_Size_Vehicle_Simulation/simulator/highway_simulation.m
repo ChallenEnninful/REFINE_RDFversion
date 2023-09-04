@@ -12,7 +12,7 @@ end
 visualize = 0; %need to turn off to stop visualization
 plot_sim_flag = visualize; %if visualize is on plot_sim_flag should also be on
 plot_AH_flag = 1;
-save_result = false; % make it true if you want to save the simulation data
+save_result = true; % make it true if you want to save the simulation data
 save_video = false; %make it true if you want to save videos of the trials
 
 
@@ -26,14 +26,16 @@ t_plan = 3;
 t_failsafe_move = 3;
 verbose_level = 0;
 num_ego_vehicles = 1;
-num_moving_cars = 15;
-num_static_cars = 3;
+% num_moving_cars = 15;
+% num_static_cars = 3;
+num_moving_cars = 26;
+num_static_cars = 5;
 num_total_cars = num_ego_vehicles + num_moving_cars + num_static_cars;
 hlp_lookahead = 90;
 lane_changeFRS_log = {};
 
 
-for j = 1:1000 
+for j = 1:1000
     % RESET simulation environment
     World = dynamic_car_world( 'bounds', bounds, ...
         'buffer', world_buffer, 'goal', [1010;3.7], ...
