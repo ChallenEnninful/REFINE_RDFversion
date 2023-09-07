@@ -26,6 +26,8 @@ classdef rlsimulator < handle
         plot_fancy_vehicle = false;
         visualize = 1;
         single_plan = 0;
+
+        save_dir_prefix = '';
     end
 
     methods
@@ -159,7 +161,9 @@ classdef rlsimulator < handle
             IsDone = S.determine_isDone_flag(collision,action_replaced,stuck,goal_check);
             
             if S.eval &&( IsDone == 1 || IsDone == 3 ||IsDone == 4 || IsDone == 5) && S.save_result
-                Filename = sprintf('REFINE_IsDone_%s-SimID_%s.mat', num2str(IsDone), num2str(S.epscur));
+                Filename = sprintf('/REFINE_IsDone_%s-SimID_%s.mat', num2str(IsDone), num2str(S.epscur));
+                Filename = strcat(S.save_dir_prefix, Filename);
+                
                 ref_Z = S.AH.ref_Z;
                 proposed_ref_Z = S.AH.proposed_ref_Z;
                 T= S.AH.T;

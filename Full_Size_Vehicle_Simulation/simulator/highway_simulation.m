@@ -36,6 +36,7 @@ lane_changeFRS_log = {};
 SIM_MAX_DISTANCE = 400; %maximum distance along highway to spawn a vehicle. Should not be >900 since highway is only 1000m
 min_obs_start_dist = 80; %min distance away from ego vehicle that the obstacle vehicles can be spawned
 car_safe_dist = 1; %min allowable distance between obstacle vehicles
+num_trials=100;
 
 %% Error catching for simulation setup
 if save_video && ~visualize
@@ -43,8 +44,9 @@ if save_video && ~visualize
 end
 
 %%
-
-for j = 1:1000
+max_planning_time = 0.35;
+save_dir_prefix = "RecedingHorizonPlanning/" + string(num_trials) + "_Trials_" + string(num_moving_cars) + "Obs_" + string(SIM_MAX_DISTANCE) + "obsLength_" + string(max_planning_time) + "MaxTime";
+for j = 1:num_trials
     % RESET simulation environment
     World = dynamic_car_world( 'bounds', bounds, ...
         'buffer', world_buffer, 'goal', [1010;3.7], ...
@@ -63,7 +65,7 @@ for j = 1:1000
         'verbose',verbose_level); % takes care of online planning
     AgentHelper.FRS_u0_p_maps = load("u0_p_maps.mat");
     Simulator = rlsimulator(AgentHelper,World,'plot_sim_flag',plot_sim_flag,'plot_AH_flag',plot_AH_flag,'save_result',save_result,...
-        'save_video',save_video,'epscur',j,'visualize',visualize);
+        'save_video',save_video,'epscur',j,'visualize',visualize,'save_dir_prefix',save_dir_prefix);
 
     AgentHelper.S = Simulator;
     Simulator.eval = 1; %turn on evaluation so summary will be saved
