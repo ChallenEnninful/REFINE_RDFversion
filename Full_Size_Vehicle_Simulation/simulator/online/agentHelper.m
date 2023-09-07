@@ -69,7 +69,10 @@ classdef agentHelper < handle
             elseif strcmp(AH.flags.safety_layer, 'A')
                 fprintf('no replacement action found\n');
                 AH.stuck_count = AH.stuck_count + 1;
-
+                
+                if isempty(AH.FRS_hist)
+                    return
+                end
                     
                 % match FRS time horizon and ref_traj horizon
                 t_itv = interval(AH.FRS_hist{end}.vehRS_save{end}); tub = supremum(t_itv(20));

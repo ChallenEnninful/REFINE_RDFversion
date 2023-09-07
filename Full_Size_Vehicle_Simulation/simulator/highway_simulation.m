@@ -9,10 +9,10 @@ else
     disp('table already loaded') ;
 end
 
-visualize = 0; %need to turn off to stop visualization
+visualize = 1; %need to turn off to stop visualization
 plot_sim_flag = visualize; %if visualize is on plot_sim_flag should also be on
 plot_AH_flag = 1;
-save_result = true; % make it true if you want to save the simulation data
+save_result = false; % make it true if you want to save the simulation data
 save_video = false; %make it true if you want to save videos of the trials
 
 
@@ -33,7 +33,16 @@ num_static_cars = 5;
 num_total_cars = num_ego_vehicles + num_moving_cars + num_static_cars;
 hlp_lookahead = 90;
 lane_changeFRS_log = {};
+SIM_MAX_DISTANCE = 400; %maximum distance along highway to spawn a vehicle. Should not be >900 since highway is only 1000m
+min_obs_start_dist = 80; %min distance away from ego vehicle that the obstacle vehicles can be spawned
+car_safe_dist = 1; %min allowable distance between obstacle vehicles
 
+%% Error catching for simulation setup
+if save_video && ~visualize
+    error("Error. Visualize flag needs to enabled on if save_video flag is enabled")
+end
+
+%%
 
 for j = 1:1000
     % RESET simulation environment
@@ -41,7 +50,9 @@ for j = 1:1000
         'buffer', world_buffer, 'goal', [1010;3.7], ...
         'verbose', verbose_level, 'goal_radius', goal_radius, ...
         'num_cars', num_total_cars, 'num_moving_cars', num_moving_cars, ...
-        't_move_and_failsafe', t_move+t_failsafe_move) ;
+        't_move_and_failsafe', t_move+t_failsafe_move, ...
+        'SIM_MAX_DISTANCE',SIM_MAX_DISTANCE,'min_obs_start_dist',min_obs_start_dist, ...
+         'car_safe_dist',car_safe_dist) ;
 
     Agent = highway_cruising_10_state_agent; % takes care of vehicle states and dynamics
     Agent.desired_initial_condition = [10;0; 0; 20;0;0;20;0;0;0];

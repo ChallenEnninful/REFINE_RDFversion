@@ -26,10 +26,11 @@ classdef dynamic_car_world < world
         
         car_safe_dist = 15;%40 % car 6 m long
         
-        SIM_MAX_DISTANCE = 800;
+        SIM_MAX_DISTANCE = 800; %maximum distance along highway to spawn a vehicle. Should not be >900 since highway is only 1000m
         car_max_spd = 25;
         car_min_spd = 15;
-        
+        min_obs_start_dist = 80; %min distance away from ego vehicle that the obstacle vehicles can be spawned
+
         start_line
         t_move_and_failsafe
 
@@ -149,7 +150,7 @@ classdef dynamic_car_world < world
                         else
                             MAX_DIST = W.SIM_MAX_DISTANCE;
                         end
-                        xPos = MAX_DIST * rand  + 80;% start at least 80 ahead
+                        xPos = MAX_DIST * rand  + W.min_obs_start_dist;% start at least W.min_obs_start_dist ahead
                     
                     
                     if is_static_obs

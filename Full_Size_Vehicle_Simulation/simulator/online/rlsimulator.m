@@ -25,6 +25,7 @@ classdef rlsimulator < handle
 
         plot_fancy_vehicle = false;
         visualize = 1;
+        single_plan = 0;
     end
 
     methods
@@ -57,83 +58,90 @@ classdef rlsimulator < handle
 %             collision = S.W.collision_check(agent_info);
             collision = 0;
 
-            % visualization
-            if ~S.plot_fancy_vehicle && S.visualize
-                S.plot();
-                scatter(wp(1), wp(2), 360,'k','x','LineWidth',5);
-            end
-            if S.visualize
-                while abs(S.t_now - S.AH.A.time(end)) > S.video_dt
-                    if S.plot_fancy_vehicle
-                        S.plot();
-                        scatter(wp(1), wp(2), 360,'k','x','LineWidth',5);
-                    end
-                    % ego vehicle
-                    idx = find(S.AH.A.time <= S.t_now, 1, 'last');
-                    alpha = (S.t_now - S.AH.A.time(idx)) / (S.AH.A.time(idx+1) - S.AH.A.time(idx));
-                    state_now = S.AH.A.state(:,idx)*(1-alpha) + S.AH.A.state(:,idx+1)*alpha;
-                    xy_now = state_now(1:2);
-                    h_now = state_now(3);
-                    if ~S.plot_fancy_vehicle
-                        footprint = [cos(h_now), -sin(h_now); sin(h_now) cos(h_now)]*[-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+xy_now;
-                        S.AH.A.plot_data.footprint.Vertices = footprint';
-                    else
-                        plot_vehicle(xy_now(1), xy_now(2), h_now, [0,0,0]/255, [140,140,140]/255, 1);
-                    end
-                    plot([S.AH.A.state(1,1:idx),xy_now(1)],[S.AH.A.state(2,1:idx),xy_now(2)],'k','LineWidth',2);
-    
-                    % move other vehicle
-                    num_static_obstacle = S.W.num_cars - S.W.num_moving_cars-1;
-                    if S.plot_fancy_vehicle % plot static vehicle
-                        for i = 1:num_static_obstacle
-                            x_now = S.W.envCars(i+1,1);
-                            y_now = S.W.envCars(i+1,3);
-                            plot_vehicle(x_now,y_now,0, [255,255,255]/255, [200,200,200]/255, 1);
-                        end
-                    end
-                    for i = 1:S.W.num_moving_cars
-                        v_now = S.W.envCars(i+num_static_obstacle+1,2); 
-                        x_now = S.W.envCars(i+num_static_obstacle+1,1) + v_now * S.t_now;
-                        y_now = S.W.envCars(i+num_static_obstacle+1,3); 
+            %if first planning iteration is not feasible don't try plot anything
+            if isempty(S.AH.FRS_hist)
+                IsDone = 4;
+                Observation =[]; 
+                Reward = 0;%S.W.getRew(agent_info,Observation);
+            else
+                % visualization
+                if ~S.plot_fancy_vehicle && S.visualize
+                    S.plot();
+                    scatter(wp(1), wp(2), 360,'k','x','LineWidth',5);
+                end
+                if S.visualize
+                    while abs(S.t_now - S.AH.A.time(end)) > S.video_dt
                         if S.plot_fancy_vehicle
-                            plot_vehicle(x_now,y_now,0, [255,255,255]/255, [200,200,200]/255, 1);
-                        else
-                            xmid = 0.5*( min(S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle)) +  max(S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle)) );
-                            ymid = 0.5*( min(S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle)) +  max(S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle)) );
-                            S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle) =  S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle) - xmid + x_now;
-                            S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle) =  S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle) - ymid + y_now;
+                            S.plot();
+                            scatter(wp(1), wp(2), 360,'k','x','LineWidth',5);
                         end
-                    end
-                    
-                    % check collision here
-                    for i = 1:S.W.num_cars-1
-                        v_now = S.W.envCars(i+1,2); 
-                        x_now = S.W.envCars(i+1,1) + v_now * S.t_now;
-                        y_now = S.W.envCars(i+1,3);
-                        obs = [-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+[x_now; y_now];
-                        if ~collision 
-                            [bla,~] = polyxpoly(footprint(1,:),footprint(2,:),obs(1,:),obs(2,:));
-                            if ~isempty(bla)
-                                collision = 1;
+                        % ego vehicle
+                        idx = find(S.AH.A.time <= S.t_now, 1, 'last');
+                        alpha = (S.t_now - S.AH.A.time(idx)) / (S.AH.A.time(idx+1) - S.AH.A.time(idx));
+                        state_now = S.AH.A.state(:,idx)*(1-alpha) + S.AH.A.state(:,idx+1)*alpha;
+                        xy_now = state_now(1:2);
+                        h_now = state_now(3);
+                        if ~S.plot_fancy_vehicle
+                            footprint = [cos(h_now), -sin(h_now); sin(h_now) cos(h_now)]*[-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+xy_now;
+                            S.AH.A.plot_data.footprint.Vertices = footprint';
+                        else
+                            plot_vehicle(xy_now(1), xy_now(2), h_now, [0,0,0]/255, [140,140,140]/255, 1);
+                        end
+                        plot([S.AH.A.state(1,1:idx),xy_now(1)],[S.AH.A.state(2,1:idx),xy_now(2)],'k','LineWidth',2);
+        
+                        % move other vehicle
+                        num_static_obstacle = S.W.num_cars - S.W.num_moving_cars-1;
+                        if S.plot_fancy_vehicle % plot static vehicle
+                            for i = 1:num_static_obstacle
+                                x_now = S.W.envCars(i+1,1);
+                                y_now = S.W.envCars(i+1,3);
+                                plot_vehicle(x_now,y_now,0, [255,255,255]/255, [200,200,200]/255, 1);
                             end
                         end
+                        for i = 1:S.W.num_moving_cars
+                            v_now = S.W.envCars(i+num_static_obstacle+1,2); 
+                            x_now = S.W.envCars(i+num_static_obstacle+1,1) + v_now * S.t_now;
+                            y_now = S.W.envCars(i+num_static_obstacle+1,3); 
+                            if S.plot_fancy_vehicle
+                                plot_vehicle(x_now,y_now,0, [255,255,255]/255, [200,200,200]/255, 1);
+                            else
+                                xmid = 0.5*( min(S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle)) +  max(S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle)) );
+                                ymid = 0.5*( min(S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle)) +  max(S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle)) );
+                                S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle) =  S.W.plot_data.obstacles_seen.XData(:,i+num_static_obstacle) - xmid + x_now;
+                                S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle) =  S.W.plot_data.obstacles_seen.YData(:,i+num_static_obstacle) - ymid + y_now;
+                            end
+                        end
+                        
+                        % check collision here
+                        for i = 1:S.W.num_cars-1
+                            v_now = S.W.envCars(i+1,2); 
+                            x_now = S.W.envCars(i+1,1) + v_now * S.t_now;
+                            y_now = S.W.envCars(i+1,3);
+                            obs = [-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+[x_now; y_now];
+                            if ~collision 
+                                [bla,~] = polyxpoly(footprint(1,:),footprint(2,:),obs(1,:),obs(2,:));
+                                if ~isempty(bla)
+                                    collision = 1;
+                                end
+                            end
+                        end
+    
+                        if xy_now(1)+200 <= 1030
+                            xlim([xy_now(1)-10, xy_now(1)+200]);
+                        else
+                            xlim([1030-210,1030]);
+                        end
+        %                 xlim([90 280]);
+                        
+                        ylim([-5, 12]);
+                        title("Speed="+num2str(state_now(4),'%.1f')+" [m/s]");
+                        S.t_now = S.t_now + S.video_dt_multiplier * S.video_dt;
+                        if S.save_video
+                            frame = getframe(gcf);
+                            writeVideo(S.videoObj, frame);
+                        end
+                        pause(S.video_dt_multiplier * S.video_dt)
                     end
-
-                    if xy_now(1)+200 <= 1030
-                        xlim([xy_now(1)-10, xy_now(1)+200]);
-                    else
-                        xlim([1030-210,1030]);
-                    end
-    %                 xlim([90 280]);
-                    
-                    ylim([-5, 12]);
-                    title("Speed="+num2str(state_now(4),'%.1f')+" [m/s]");
-                    S.t_now = S.t_now + S.video_dt_multiplier * S.video_dt;
-                    if S.save_video
-                        frame = getframe(gcf);
-                        writeVideo(S.videoObj, frame);
-                    end
-                    pause(S.video_dt_multiplier * S.video_dt)
                 end
             end
 
@@ -250,6 +258,8 @@ classdef rlsimulator < handle
                 IsDone = 5;
             elseif stuck
                 IsDone = 4;
+            elseif S.single_plan && (S.AH.prev_action ==-1 || (S.AH.cur_t0_idx > 2 && S.AH.prev_action == 3))
+                IsDone = 5; %force isDone to be 5 if no crash or stop after single iteration
             elseif action_replaced
                 IsDone = 2;
             else
