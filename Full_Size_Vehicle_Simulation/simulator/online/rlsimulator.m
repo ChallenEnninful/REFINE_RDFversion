@@ -163,6 +163,9 @@ classdef rlsimulator < handle
             if S.eval &&( IsDone == 1 || IsDone == 3 ||IsDone == 4 || IsDone == 5) && S.save_result
                 Filename = sprintf('/REFINE_IsDone_%s-SimID_%s.mat', num2str(IsDone), num2str(S.epscur));
                 Filename = strcat(S.save_dir_prefix, Filename);
+                if exist(S.save_dir_prefix, 'dir') == 0
+                    mkdir(S.save_dir_prefix);
+                end
                 
                 ref_Z = S.AH.ref_Z;
                 proposed_ref_Z = S.AH.proposed_ref_Z;

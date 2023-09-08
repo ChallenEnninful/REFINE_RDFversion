@@ -9,10 +9,10 @@ else
     disp('table already loaded') ;
 end
 
-visualize = 1; %need to turn off to stop visualization
+visualize = 0; %need to turn off to stop visualization
 plot_sim_flag = visualize; %if visualize is on plot_sim_flag should also be on
 plot_AH_flag = 1;
-save_result = false; % make it true if you want to save the simulation data
+save_result = true; % make it true if you want to save the simulation data
 save_video = false; %make it true if you want to save videos of the trials
 
 
@@ -28,13 +28,13 @@ verbose_level = 0;
 num_ego_vehicles = 1;
 % num_moving_cars = 15;
 % num_static_cars = 3;
-num_moving_cars = 26;
-num_static_cars = 5;
+num_moving_cars = 30;
+num_static_cars = 0;
 num_total_cars = num_ego_vehicles + num_moving_cars + num_static_cars;
 hlp_lookahead = 90;
 lane_changeFRS_log = {};
 SIM_MAX_DISTANCE = 400; %maximum distance along highway to spawn a vehicle. Should not be >900 since highway is only 1000m
-min_obs_start_dist = 80; %min distance away from ego vehicle that the obstacle vehicles can be spawned
+min_obs_start_dist = 50; %min distance away from ego vehicle that the obstacle vehicles can be spawned
 car_safe_dist = 1; %min allowable distance between obstacle vehicles
 num_trials=100;
 
@@ -44,8 +44,8 @@ if save_video && ~visualize
 end
 
 %%
-max_planning_time = 0.35;
-save_dir_prefix = "RecedingHorizonPlanning/" + string(num_trials) + "_Trials_" + string(num_moving_cars) + "Obs_" + string(SIM_MAX_DISTANCE) + "obsLength_" + string(max_planning_time) + "MaxTime";
+max_planning_time = 0.25;
+save_dir_prefix = "RecedingHorizonPlanning/" + string(num_trials) + "Trials_" + string(num_moving_cars) + "Obs_" + string(SIM_MAX_DISTANCE) + "obsLength_" + string(max_planning_time) + "MaxTime";
 for j = 1:num_trials
     % RESET simulation environment
     World = dynamic_car_world( 'bounds', bounds, ...
