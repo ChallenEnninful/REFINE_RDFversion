@@ -87,6 +87,7 @@ classdef rlsimulator < handle
                             footprint = [cos(h_now), -sin(h_now); sin(h_now) cos(h_now)]*[-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+xy_now;
                             S.AH.A.plot_data.footprint.Vertices = footprint';
                         else
+                            footprint = [cos(h_now), -sin(h_now); sin(h_now) cos(h_now)]*[-2.4, 2.4, 2.4, -2.4, -2.4; -1.1, -1.1, 1.1, 1.1, -1.1]+xy_now;
                             plot_vehicle(xy_now(1), xy_now(2), h_now, [0,0,0]/255, [140,140,140]/255, 1);
                         end
                         plot([S.AH.A.state(1,1:idx),xy_now(1)],[S.AH.A.state(2,1:idx),xy_now(2)],'k','LineWidth',2);
@@ -147,7 +148,6 @@ classdef rlsimulator < handle
                 end
             end
 
-
             S.wp_hist{end+1} = wp;
             agent_info.replace_distance = replace_distance;
             Observation =[]; %S.W.get_ob(agent_info);
@@ -186,6 +186,10 @@ classdef rlsimulator < handle
                 save(Filename,'hist_info','agent_info','world_info','ref_Z','proposed_ref_Z','T','t_move','t_real_start_arr','t_proposed_start_arr','envCars')
             end
             
+            if S.save_video && S.eval &&( IsDone == 1 || IsDone == 3 ||IsDone == 4 || IsDone == 5)
+                fprintf('Closing Video Object')
+                close(S.videoObj)
+            end
             drawnow;
             LoggedSignals = struct;
             

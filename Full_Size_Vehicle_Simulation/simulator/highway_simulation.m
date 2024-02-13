@@ -10,9 +10,10 @@ else
 end
 
 visualize = 0; %need to turn off to stop visualization
+visualize = 0; %need to turn off to stop visualization
 plot_sim_flag = visualize; %if visualize is on plot_sim_flag should also be on
 plot_AH_flag = 1;
-save_result = true; % make it true if you want to save the simulation data
+save_result = 1; % make it true if you want to save the simulation data
 save_video = false; %make it true if you want to save videos of the trials
 
 
@@ -30,10 +31,13 @@ num_ego_vehicles = 1;
 % num_static_cars = 3;
 num_moving_cars = 30;
 num_static_cars = 0;
+num_moving_cars = 30;
+num_static_cars = 0;
 num_total_cars = num_ego_vehicles + num_moving_cars + num_static_cars;
 hlp_lookahead = 90;
 lane_changeFRS_log = {};
 SIM_MAX_DISTANCE = 400; %maximum distance along highway to spawn a vehicle. Should not be >900 since highway is only 1000m
+min_obs_start_dist = 50; %min distance away from ego vehicle that the obstacle vehicles can be spawned
 min_obs_start_dist = 50; %min distance away from ego vehicle that the obstacle vehicles can be spawned
 car_safe_dist = 1; %min allowable distance between obstacle vehicles
 num_trials=100;

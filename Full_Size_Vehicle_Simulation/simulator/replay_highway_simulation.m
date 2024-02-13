@@ -14,14 +14,15 @@ plot_sim_flag = 1;
 plot_AH_flag = 1;
 save_result = false; % make it true if you want to save the simulation data
 save_video = true; %make it true if you want to save videos of the trials
-
+plot_fancy_vehicle = 1;
 replay_mode = 1; %flag that will replay a previous trial using the selected K_logs
 
 %switch with path to folder that contains trial logs. THis will make a directory struct that contains info on all the files in that folder
-log_dir = dir('/simulator/REDEFINE_exp_logs/results_Mar30'); 
+log_dir = dir('/simulator/REFINE_sim_videos_01_07_24'); 
 
 %list of trials to replay
-trials_to_replay = [2,26,29,35,37,40,47,49,51,53,56,72,73,97,101,111,114,127,133,137,138,140,150,152,155];
+% trials_to_replay = [2,26,29,35,37,40,47,49,51,53,56,72,73,97,101,111,114,127,133,137,138,140,150,152,155];
+trials_to_replay = [23];
 number_of_trials = length(trials_to_replay); %number of trials you want to replay
 
 %initalize array to store indexs in log_dir that correspond to the listed
@@ -33,8 +34,12 @@ disp('Getting together the set of trials we want to replay')
 tic
 for kk = 1:length(trials_to_replay)
     for i = 3:length(log_dir) %start from 3 because typically the first two entries are not actual files
-        desired_string = extractBetween(log_dir(i).name,'sim_summary_IsDone_','_');
-        desired_string = extractAfter(desired_string,'-');
+%         desired_string = extractBetween(log_dir(i).name,'sim_summary_IsDone_','_');
+%         desired_string = extractAfter(desired_string,'-');
+        desired_string = extractBetween(log_dir(i).name,'SimID_','.mat');
+        if isempty(desired_string)
+            continue
+        end
         if isequal(desired_string{1,1},num2str(trials_to_replay(1,kk)))
             trial_idx = [trial_idx,i];
             continue
@@ -84,7 +89,7 @@ for j = 1:number_of_trials
         'verbose',verbose_level,'replay_mode',replay_mode,'trial_replay_hist',trial_replaydata.hist_info); % takes care of online planning
     AgentHelper.FRS_u0_p_maps = load("u0_p_maps.mat");
     Simulator = rlsimulator(AgentHelper,World,'plot_sim_flag',plot_sim_flag,'plot_AH_flag',plot_AH_flag,'save_result',save_result,...
-        'save_video',save_video,'epscur',trials_to_replay(j));
+        'save_video',save_video,'epscur',trials_to_replay(j),'plot_fancy_vehicle',plot_fancy_vehicle);
 
     AgentHelper.S = Simulator;
     Simulator.eval = 1; %turn on evaluation so summary will be saved/
